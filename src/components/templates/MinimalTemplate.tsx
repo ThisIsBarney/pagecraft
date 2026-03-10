@@ -1,5 +1,5 @@
-import React from "react";
 import { PageContent } from "@/lib/notion";
+import { BlocksRenderer } from "@/components/BlockRenderer";
 
 interface MinimalTemplateProps {
   content: PageContent;
@@ -7,19 +7,6 @@ interface MinimalTemplateProps {
 }
 
 export function MinimalTemplate({ content, author }: MinimalTemplateProps) {
-  // 简单的 markdown 转 HTML（MVP 版本，后续可以用更完善的库）
-  const htmlContent = content.markdown
-    .replace(/^# (.*$)/gim, '<h1 class="text-4xl font-bold mb-6">$1</h1>')
-    .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-semibold mt-8 mb-4">$1</h2>')
-    .replace(/^### (.*$)/gim, '<h3 class="text-xl font-medium mt-6 mb-3">$1</h3>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:underline" target="_blank" rel="noopener">$1</a>')
-    .replace(/^- (.*$)/gim, '<li class="ml-4">$1</li>')
-    .replace(/^(?!<[h|l|p|u|o|d]).*$/gim, '<p class="mb-4 leading-relaxed">$&</p>')
-    .replace(/\n/g, '');
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -29,19 +16,24 @@ export function MinimalTemplate({ content, author }: MinimalTemplateProps) {
             <span className="text-sm text-gray-500">
               {author || "Portfolio"}
             </span>
-            <span className="text-xs text-gray-400">
+            <a 
+              href="/" 
+              className="text-xs text-gray-400 hover:text-gray-600"
+            >
               Made with PageCraft
-            </span>
+            </a>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <article 
-          className="prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: htmlContent }}
-        />
+        <article>
+          <h1 className="text-4xl font-bold text-gray-900 mb-8">
+            {content.title}
+          </h1>
+          <BlocksRenderer blocks={content.blocks} />
+        </article>
       </main>
 
       {/* Footer */}
