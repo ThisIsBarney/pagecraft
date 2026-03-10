@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Block, RichText } from "@/lib/notion";
 
 interface BlockRendererProps {
@@ -50,7 +49,7 @@ function renderRichText(richTexts: RichText[]) {
 
 // 单个块渲染
 export function BlockRenderer({ block }: BlockRendererProps) {
-  const { type, id } = block;
+  const { type } = block;
 
   switch (type) {
     case "paragraph":
