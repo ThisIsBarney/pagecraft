@@ -20,7 +20,12 @@ export interface PageInfo {
 export interface PageContent {
   title: string;
   markdown: string;
-  blocks: any[];
+  blocks: unknown[];
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractTitle(page: any): string {
+  return page.properties?.title?.title?.[0]?.plain_text || "Untitled";
 }
 
 // 获取用户的所有页面
@@ -34,9 +39,10 @@ export async function getPages(): Promise<PageInfo[]> {
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return response.results.map((page: any) => ({
     id: page.id,
-    title: page.properties?.title?.title?.[0]?.plain_text || "Untitled",
+    title: extractTitle(page),
     url: page.url,
     lastEdited: page.last_edited_time,
   }));
@@ -51,8 +57,9 @@ export async function getPageContent(pageId: string): Promise<PageContent> {
   const cleanPageId = pageId.replace(/-/g, "");
 
   // 获取页面信息
-  const page = await notion.pages.retrieve({ page_id: cleanPageId });
-  const title = (page as any).properties?.title?.title?.[0]?.plain_text || "Untitled";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const page = await notion.pages.retrieve({ page_id: cleanPageId }) as any;
+  const title = extractTitle(page);
 
   // 获取页面块
   const blocks = await notion.blocks.children.list({

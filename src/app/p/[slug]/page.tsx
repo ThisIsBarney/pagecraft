@@ -15,7 +15,7 @@ export default async function PublicPage({ params }: PageProps) {
     const content = await getPublicPageContent(pageId);
     
     return <MinimalTemplate content={content} />;
-  } catch (error) {
+  } catch {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
