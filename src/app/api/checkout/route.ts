@@ -13,11 +13,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { domain, pageId, template } = body;
 
-    if (!domain || !pageId) {
-      return NextResponse.json(
-        { error: "Domain and pageId required" },
-        { status: 400 }
-      );
+    // 构建产品描述
+    let description = "PageCraft Pro Subscription";
+    if (domain) {
+      description += ` - Domain: ${domain}`;
     }
 
     // 创建 Stripe Checkout 会话
@@ -30,7 +29,7 @@ export async function POST(request: Request) {
             currency: "usd",
             product_data: {
               name: "PageCraft Pro",
-              description: `Custom domain: ${domain}`,
+              description,
             },
             unit_amount: 600, // $6.00
             recurring: {
@@ -43,8 +42,8 @@ export async function POST(request: Request) {
       success_url: STRIPE_CONFIG.successUrl,
       cancel_url: STRIPE_CONFIG.cancelUrl,
       metadata: {
-        domain,
-        pageId,
+        domain: domain || "",
+        pageId: pageId || "",
         template: template || "minimal",
       },
     });

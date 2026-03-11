@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-
 export default function DomainsPage() {
   const [domain, setDomain] = useState("");
   const [pageId, setPageId] = useState("");
@@ -24,7 +23,7 @@ export default function DomainsPage() {
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain, pageId, template }),
+        body: JSON.stringify({ domain: domain || undefined, pageId: pageId || undefined, template }),
       });
 
       const data = await response.json();
@@ -42,8 +41,6 @@ export default function DomainsPage() {
         window.location.href = data.url;
         return;
       }
-
-      // Stripe.js 重定向已在前面的 window.location 处理
     } catch {
       setResult({
         success: false,
@@ -69,7 +66,7 @@ export default function DomainsPage() {
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-2">Upgrade to Pro</h1>
             <p className="text-gray-600">
-              Get a custom domain and unlock all features.
+              Unlock all features and optionally connect a custom domain.
             </p>
           </div>
 
@@ -86,7 +83,7 @@ export default function DomainsPage() {
               </div>
             </div>
             <ul className="mt-4 space-y-2 text-sm">
-              <li className="flex items-center gap-2"><span>✓</span> Custom domain</li>
+              <li className="flex items-center gap-2"><span>✓</span> Custom domain (optional)</li>
               <li className="flex items-center gap-2"><span>✓</span> All premium templates</li>
               <li className="flex items-center gap-2"><span>✓</span> Remove PageCraft branding</li>
               <li className="flex items-center gap-2"><span>✓</span> Analytics</li>
@@ -101,26 +98,27 @@ export default function DomainsPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Domain - Optional */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your Domain
+                Your Domain <span className="text-gray-400 font-normal">(optional)</span>
               </label>
               <input
                 type="text"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
-                placeholder="e.g., example.com"
+                placeholder="e.g., example.com (leave empty to skip)"
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
               />
               <p className="mt-2 text-sm text-gray-500">
-                Enter your root domain or subdomain
+                You can add a custom domain later from your dashboard
               </p>
             </div>
 
+            {/* Page ID - Optional */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Notion Page ID
+                Notion Page ID <span className="text-gray-400 font-normal">(optional)</span>
               </label>
               <input
                 type="text"
@@ -128,13 +126,13 @@ export default function DomainsPage() {
                 onChange={(e) => setPageId(e.target.value)}
                 placeholder="e.g., 1a2b3c4d5e6f7g8h9i0j1234567890ab"
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                required
               />
             </div>
 
+            {/* Template */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Template
+                Default Template
               </label>
               <select
                 value={template}
@@ -152,21 +150,23 @@ export default function DomainsPage() {
               disabled={loading}
               className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? "Processing..." : "Subscribe & Connect Domain - $6/month"}
+              {loading ? "Processing..." : "Upgrade to Pro - $6/month"}
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t">
-            <h3 className="font-medium text-gray-900 mb-3">After payment:</h3>
-            <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
-              <li>Add CNAME record in your DNS:</li>
-              <li className="pl-5 font-mono text-xs bg-gray-100 p-2 rounded">
-                Name: @<br />
-                Value: pagecraft-eight.vercel.app
-              </li>
-              <li>Your site will be live in 5-10 minutes!</li>
-            </ol>
-          </div>
+          {domain && (
+            <div className="mt-8 pt-6 border-t">
+              <h3 className="font-medium text-gray-900 mb-3">After payment:</h3>
+              <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
+                <li>Add CNAME record in your DNS:</li>
+                <li className="pl-5 font-mono text-xs bg-gray-100 p-2 rounded">
+                  Name: @<br />
+                  Value: pagecraft-eight.vercel.app
+                </li>
+                <li>Your site will be live in 5-10 minutes!</li>
+              </ol>
+            </div>
+          )}
 
           <p className="mt-6 text-xs text-gray-500 text-center">
             Powered by Stripe. Cancel anytime.
