@@ -28,6 +28,9 @@ export async function GET(request: Request) {
     tests: {},
   };
 
+  // Initialize tests object
+  results.tests = {};
+
   if (!process.env.NOTION_TOKEN) {
     return NextResponse.json({
       ...results,
