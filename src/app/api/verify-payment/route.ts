@@ -31,7 +31,6 @@ export async function POST(request: Request) {
 
     // 保存域名配置到持久化存储
     await domainsDb.set(domain, {
-      domain,
       pageId,
       template: template || "minimal",
       verified: true,
