@@ -25,23 +25,47 @@ export async function POST(request: Request) {
     // 从 metadata 获取域名信息
     const { domain, pageId, template } = session.metadata || {};
 
-    if (!domain || !pageId) {
-      return NextResponse.json({ error: "Missing domain info" }, { status: 400 });
-    }
-
     // 从 session 获取用户邮箱
     const customerEmail = session.customer_details?.email;
 
-    // 保存域名配置
-    await domainsDb.set(domain, {
-      pageId,
-      template: template || "minimal",
-      userEmail: customerEmail || undefined,
-      verified: true,
-      subscriptionId: typeof session.subscription === 'string' ? session.subscription : undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    // 如果有域名和 pageId，保存域名配置
+    if (domain && pageId && domain !== "" && pageId !== "") {
+      await domainsDb.set(domain, {
+        pageId,
+        template: template || "minimal",
+        userEmail: customerEmail || undefined,
+        verified: true,
+        subscriptionId: typeof session.subscription === 'string' ? session.subscription : undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      console.log("Domain registered:", domain, "->", pageId);
+    }
+
+    // 更新用户为 Pro（通过 Stripe customer ID 或邮箱）
+    if (customerEmail) {
+      const user = await usersDb.getByEmail(customerEmail);
+      if (user) {
+        user.subscriptionStatus = 'active';
+        user.stripeCustomerId = typeof session.customer === 'string' ? session.customer : user.stripeCustomerId;
+        user.updatedAt = new Date().toISOString();
+        await usersDb.set(user.id, user);
+        console.log("User upgraded to Pro:", customerEmail);
+      } else {
+        // 如果用户不存在，创建新用户
+        const id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await usersDb.set(id, {
+          id,
+          email: customerEmail,
+          name: customerEmail.split('@')[0],
+          stripeCustomerId: typeof session.customer === 'string' ? session.customer : undefined,
+          subscriptionStatus: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        console.log("New Pro user created:", customerEmail);
+      }
+    }
 
     // 更新用户为 Pro
     if (customerEmail) {
@@ -54,13 +78,11 @@ export async function POST(request: Request) {
       }
     }
 
-    console.log("Domain registered:", domain, "->", pageId);
-
     return NextResponse.json({
       success: true,
-      domain,
-      pageId,
-      template,
+      domain: domain || undefined,
+      pageId: pageId || undefined,
+      template: template || "minimal",
     });
   } catch (error) {
     console.error("Verify payment error:", error);

@@ -56,36 +56,54 @@ function PaymentSuccessContent() {
               </div>
             )}
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 text-left">
-              <h3 className="font-medium text-green-900 mb-2">Next Steps:</h3>
-              <ol className="text-sm text-green-800 space-y-2 list-decimal list-inside">
-                <li>Add CNAME record in your DNS:</li>
-                <li className="pl-5 font-mono text-xs bg-green-100 p-2 rounded mt-1">
-                  Type: CNAME<br />
-                  Name: @<br />
-                  Value: pagecraft-eight.vercel.app
-                </li>
-                <li>Wait 5-10 minutes for DNS propagation</li>
-                <li>Visit your domain!</li>
-              </ol>
-            </div>
+            {domain ? (
+              <>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 text-left">
+                  <h3 className="font-medium text-green-900 mb-2">Next Steps:</h3>
+                  <ol className="text-sm text-green-800 space-y-2 list-decimal list-inside">
+                    <li>Add CNAME record in your DNS:</li>
+                    <li className="pl-5 font-mono text-xs bg-green-100 p-2 rounded mt-1">
+                      Type: CNAME<br />
+                      Name: @<br />
+                      Value: pagecraft-eight.vercel.app
+                    </li>
+                    <li>Wait 5-10 minutes for DNS propagation</li>
+                    <li>Visit your domain!</li>
+                  </ol>
+                </div>
 
-            <div className="space-y-3">
-              <a
-                href="/"
-                className="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                Go to Dashboard
-              </a>
-              <a
-                href={`https://${domain}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full py-3 text-gray-700 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-              >
-                Visit Your Site →
-              </a>
-            </div>
+                <div className="space-y-3">
+                  <a
+                    href="/dashboard"
+                    className="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  >
+                    Go to Dashboard
+                  </a>
+                  <a
+                    href={`https://${domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-3 text-gray-700 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    Visit Your Site →
+                  </a>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p className="text-blue-800">
+                    You can now create unlimited sites and add custom domains from your dashboard.
+                  </p>
+                </div>
+                <a
+                  href="/dashboard"
+                  className="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  Go to Dashboard →
+                </a>
+              </>
+            )}
           </>
         )}
 
