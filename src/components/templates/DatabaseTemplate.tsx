@@ -45,11 +45,11 @@ export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
               href={entry.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+              className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col"
             >
-              {/* Cover Image */}
+              {/* Cover Image - 减小高度 */}
               {entry.cover ? (
-                <div className="aspect-video bg-gray-100 overflow-hidden">
+                <div className="aspect-[16/9] bg-gray-100 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={entry.cover}
@@ -57,20 +57,24 @@ export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-              ) : (
-                <div className="aspect-video bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-                  <span className="text-4xl">{entry.icon || "📄"}</span>
+              ) : entry.icon ? (
+                // 有图标但没有封面 - 小图标样式
+                <div className="h-12 bg-gradient-to-br from-blue-50 to-purple-50 flex items-center px-4">
+                  <span className="text-xl mr-2">{entry.icon}</span>
                 </div>
-              )}
+              ) : null}
 
               {/* Content */}
-              <div className="p-5">
+              <div className="p-5 flex-1">
                 <h3 className="font-semibold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                  {entry.icon && !entry.cover ? (
+                    <span className="mr-2">{entry.icon}</span>
+                  ) : null}
                   {entry.title}
                 </h3>
 
                 {/* Properties */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {Object.entries(entry.properties)
                     .filter(([key, value]) => {
                       // 过滤掉空值和标题字段
@@ -78,10 +82,10 @@ export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
                       if (key.toLowerCase() === "name") return false;
                       return true;
                     })
-                    .slice(0, 3) // 最多显示3个属性
+                    .slice(0, 4) // 最多显示4个属性
                     .map(([key, value]) => (
                       <div key={key} className="flex items-start gap-2 text-sm">
-                        <span className="text-gray-400 shrink-0">{key}:</span>
+                        <span className="text-gray-400 shrink-0 text-xs uppercase tracking-wide">{key}</span>
                         <span className="text-gray-700 truncate">{value}</span>
                       </div>
                     ))}
