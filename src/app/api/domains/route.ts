@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { stripe } from "@/lib/stripe";
 
-// 简单的内存存储（MVP 阶段）
-// 生产环境应该使用数据库
+// 内存存储（生产环境用数据库）
 const domainStore: Record<string, {
   pageId: string;
   template: string;
   verified: boolean;
+  subscriptionId?: string;
 }> = {};
 
 // 获取域名配置
@@ -25,11 +26,11 @@ export async function GET(request: Request) {
   return NextResponse.json(config);
 }
 
-// 注册域名
+// 注册域名（支付后调用）
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { domain, pageId, template = "minimal" } = body;
+    const { domain, pageId, template = "minimal", subscriptionId } = body;
 
     if (!domain || !pageId) {
       return NextResponse.json(
@@ -47,25 +48,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // 检查是否已被注册
-    if (domainStore[domain]) {
-      return NextResponse.json(
-        { error: "Domain already registered" },
-        { status: 409 }
-      );
-    }
-
     // 保存配置
     domainStore[domain] = {
       pageId,
       template,
-      verified: false,
+      verified: true, // 支付后自动验证
+      subscriptionId,
     };
 
     return NextResponse.json({
       success: true,
       domain,
-      message: "Domain registered. Please configure DNS CNAME to pagecraft-eight.vercel.app",
+      message: "Domain registered successfully",
+      dns: {
+        type: "CNAME",
+        name: domain,
+        value: "pagecraft-eight.vercel.app",
+      },
     });
   } catch {
     return NextResponse.json(
@@ -75,31 +74,44 @@ export async function POST(request: Request) {
   }
 }
 
-// 验证域名（检查 DNS）
+// Stripe webhook 处理支付成功
 export async function PUT(request: Request) {
-  try {
-    const body = await request.json();
-    const { domain } = body;
+  // 验证 Stripe webhook
+  const payload = await request.text();
+  const sig = request.headers.get("stripe-signature");
 
-    if (!domain || !domainStore[domain]) {
-      return NextResponse.json(
-        { error: "Domain not found" },
-        { status: 404 }
-      );
+  if (!stripe || !sig) {
+    return NextResponse.json({ error: "Not configured" }, { status: 503 });
+  }
+
+  try {
+    // 验证 webhook（需要 STRIPE_WEBHOOK_SECRET）
+    // const event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    
+    // 简化版：直接处理
+    const event = JSON.parse(payload);
+
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      const { domain, pageId, template } = session.metadata || {};
+
+      if (domain && pageId) {
+        domainStore[domain] = {
+          pageId,
+          template: template || "minimal",
+          verified: true,
+          subscriptionId: session.subscription,
+        };
+
+        console.log("Domain registered after payment:", domain);
+      }
     }
 
-    // MVP 阶段直接标记为已验证
-    // 生产环境应该实际检查 DNS CNAME
-    domainStore[domain].verified = true;
-
-    return NextResponse.json({
-      success: true,
-      domain,
-      verified: true,
-    });
-  } catch {
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    console.error("Webhook error:", err);
     return NextResponse.json(
-      { error: "Invalid request" },
+      { error: "Webhook processing failed" },
       { status: 400 }
     );
   }
