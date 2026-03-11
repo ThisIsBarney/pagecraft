@@ -53,7 +53,7 @@ export interface DatabaseInfo {
 
 export interface PageContent {
   title: string;
-  blocks: Block[];
+  blocks?: Block[];
   type: "page" | "database";
   databaseInfo?: DatabaseInfo;
   databaseEntries?: DatabaseEntry[];
