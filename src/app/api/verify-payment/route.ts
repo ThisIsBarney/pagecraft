@@ -61,7 +61,4 @@ export async function POST(request: Request) {
   }
 }
 
-// 导出域名配置供 middleware 使用
-export function getDomainConfig() {
-  return domainStore;
-}
+
