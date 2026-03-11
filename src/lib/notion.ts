@@ -1,4 +1,4 @@
-import { Client } from "@notionhq/client";
+import { Client, isFullDatabase } from "@notionhq/client";
 
 const getNotionClient = () => {
   const token = process.env.NOTION_TOKEN;
@@ -7,6 +7,9 @@ const getNotionClient = () => {
   }
   return new Client({ auth: token });
 };
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _isFullDatabase = isFullDatabase; // Ensure import is used
 
 export interface PageInfo {
   id: string;
