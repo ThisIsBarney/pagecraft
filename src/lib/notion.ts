@@ -71,7 +71,7 @@ function extractEntryTitle(entry: any): string {
   const properties = entry.properties || {};
   
   // 找 title 类型的属性
-  for (const [key, value] of Object.entries(properties)) {
+  for (const [, value] of Object.entries(properties)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const prop = value as any;
     if (prop.type === "title" && prop.title?.length > 0) {
@@ -229,7 +229,7 @@ export async function getPageContent(pageId: string): Promise<PageContent> {
         databaseInfo: dbInfo,
         databaseEntries: entries,
       };
-    } catch (dbError) {
+    } catch {
       throw new Error("Could not find page or database with this ID");
     }
   }
