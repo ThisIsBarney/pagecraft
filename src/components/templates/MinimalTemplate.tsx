@@ -32,7 +32,7 @@ export function MinimalTemplate({ content, author }: MinimalTemplateProps) {
           <h1 className="text-4xl font-bold text-gray-900 mb-8">
             {content.title}
           </h1>
-          <BlocksRenderer blocks={content.blocks} />
+          {content.blocks && <BlocksRenderer blocks={content.blocks} />}
         </article>
       </main>
 
