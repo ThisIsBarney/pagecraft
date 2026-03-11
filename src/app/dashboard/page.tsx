@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 interface User {
   id: string;
   email: string;
@@ -8,19 +9,36 @@ interface User {
   subscriptionStatus: string;
 }
 
+interface Site {
+  domain: string;
+  pageId: string;
+  template: string;
+  url: string;
+}
+
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 检查登录状态
+    // 获取当前用户
     fetch("/api/auth")
       .then((res) => res.json())
-      .then((data) => {
+      .then(async (data) => {
         if (data.user) {
           setUser(data.user);
-        } else {
-          // 未登录，显示登录表单
+          
+          // 获取用户的域名（通过邮箱关联）
+          try {
+            const domainsRes = await fetch(`/api/user-domains?email=${encodeURIComponent(data.user.email)}`);
+            if (domainsRes.ok) {
+              const domainsData = await domainsRes.json();
+              setSites(domainsData.domains || []);
+            }
+          } catch (err) {
+            console.error("Failed to fetch domains:", err);
+          }
         }
         setLoading(false);
       })
@@ -36,12 +54,15 @@ export default function DashboardPage() {
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, name, action: "login" }),
+      body: JSON.stringify({ email, name }),
     });
 
     if (res.ok) {
       const data = await res.json();
       setUser(data.user);
+      
+      // 刷新页面获取域名
+      window.location.reload();
     }
   };
 
@@ -99,6 +120,8 @@ export default function DashboardPage() {
     );
   }
 
+  const isPro = user.subscriptionStatus === 'active';
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
@@ -110,11 +133,11 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{user.email}</span>
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-              user.subscriptionStatus === 'active' 
+              isPro
                 ? 'bg-green-100 text-green-700' 
                 : 'bg-gray-100 text-gray-700'
             }`}>
-              {user.subscriptionStatus === 'active' ? 'Pro' : 'Free'}
+              {isPro ? 'Pro' : 'Free'}
             </span>
           </div>
         </div>
@@ -149,16 +172,39 @@ export default function DashboardPage() {
             {/* My Sites */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
               <h2 className="text-xl font-bold mb-4">My Sites</h2>
-              <div className="text-center py-12 text-gray-500">
-                <div className="text-4xl mb-4">📭</div>
-                <p>No sites yet. Create your first site!</p>
-                <a
-                  href="/create"
-                  className="inline-block mt-4 text-blue-600 hover:underline"
-                >
-                  Create Site →
-                </a>
-              </div>
+              {sites.length > 0 ? (
+                <div className="space-y-4">
+                  {sites.map((site) => (
+                    <div key={site.domain} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
+                      <div>
+                        <div className="font-medium">{site.domain}</div>
+                        <div className="text-sm text-gray-500">Template: {site.template}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <a
+                          href={site.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                        >
+                          Visit →
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <div className="text-4xl mb-4">📭</div>
+                  <p>No sites yet. Create your first site!</p>
+                  <a
+                    href="/create"
+                    className="inline-block mt-4 text-blue-600 hover:underline"
+                  >
+                    Create Site →
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 
@@ -167,7 +213,7 @@ export default function DashboardPage() {
             {/* Subscription */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
               <h3 className="font-bold mb-4">Subscription</h3>
-              {user.subscriptionStatus === 'active' ? (
+              {isPro ? (
                 <div>
                   <div className="flex items-center gap-2 text-green-600 mb-2">
                     <span>✓</span>

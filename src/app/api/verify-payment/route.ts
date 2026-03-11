@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { domainsDb } from "@/lib/db";
+import { domainsDb, usersDb } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
@@ -29,15 +29,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing domain info" }, { status: 400 });
     }
 
-    // 保存域名配置到持久化存储
+    // 从 session 获取用户邮箱
+    const customerEmail = session.customer_details?.email;
+
+    // 保存域名配置
     await domainsDb.set(domain, {
       pageId,
       template: template || "minimal",
+      userEmail: customerEmail,
       verified: true,
       subscriptionId: typeof session.subscription === 'string' ? session.subscription : undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
+
+    // 更新用户为 Pro
+    if (customerEmail) {
+      const user = await usersDb.getByEmail(customerEmail);
+      if (user) {
+        user.subscriptionStatus = 'active';
+        user.updatedAt = new Date().toISOString();
+        await usersDb.set(user.id, user);
+        console.log("User upgraded to Pro:", customerEmail);
+      }
+    }
 
     console.log("Domain registered:", domain, "->", pageId);
 
@@ -50,7 +65,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Verify payment error:", error);
     return NextResponse.json(
-      { error: "Failed to verify payment" },
+      { error: "Failed to verify payment", details: String(error) },
       { status: 500 }
     );
   }
