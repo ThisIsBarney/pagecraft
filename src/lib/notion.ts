@@ -140,21 +140,45 @@ async function getAllBlocks(blockId: string): Promise<Block[]> {
   return blocks;
 }
 
+// 使用原生 fetch 查询数据库
+async function queryDatabaseWithFetch(databaseId: string, token: string, cursor?: string) {
+  const body: Record<string, unknown> = {};
+  if (cursor) body.start_cursor = cursor;
+
+  const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Notion-Version": "2022-06-28",
+      "Content-Type": "application/json",
+    },
+    body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Notion API error: ${response.status} ${error}`);
+  }
+
+  return response.json();
+}
+
 // 获取数据库条目
 async function getDatabaseEntries(databaseId: string): Promise<DatabaseEntry[]> {
-  const notion = getNotionClient();
+  const token = process.env.NOTION_TOKEN;
+  if (!token) {
+    throw new Error("NOTION_TOKEN not set");
+  }
+
   const entries: DatabaseEntry[] = [];
   let cursor: string | undefined;
+  let hasMore = true;
 
-  do {
-    // Use the client's databases.query method
+  while (hasMore) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await (notion.databases as any).query({
-      database_id: databaseId,
-      start_cursor: cursor,
-    });
+    const data: any = await queryDatabaseWithFetch(databaseId, token, cursor);
 
-    for (const entry of response.results) {
+    for (const entry of data.results || []) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const entryAny = entry as any;
       
@@ -173,8 +197,9 @@ async function getDatabaseEntries(databaseId: string): Promise<DatabaseEntry[]> 
       });
     }
 
-    cursor = response.next_cursor ?? undefined;
-  } while (cursor);
+    cursor = data.next_cursor;
+    hasMore = data.has_more;
+  }
 
   return entries;
 }
@@ -211,8 +236,6 @@ export async function getPageContent(pageId: string): Promise<PageContent> {
       type: "page",
     };
   } catch (pageError) {
-    console.log("Page retrieve failed:", (pageError as Error).message);
-    
     // 不是页面，尝试作为数据库
     try {
       const dbInfo = await getDatabaseInfo(cleanPageId);
@@ -226,8 +249,6 @@ export async function getPageContent(pageId: string): Promise<PageContent> {
         databaseEntries: entries,
       };
     } catch (dbError) {
-      console.log("Database retrieve failed:", (dbError as Error).message);
-      
       // 返回详细错误
       const pageErrMsg = (pageError as Error).message;
       const dbErrMsg = (dbError as Error).message;
