@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { loadStripe } from "@stripe/stripe-js";
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
 
 export default function DomainsPage() {
   const [domain, setDomain] = useState("");
@@ -19,7 +22,8 @@ export default function DomainsPage() {
     setResult(null);
 
     try {
-      const response = await fetch("/api/domains", {
+      // 创建结账会话
+      const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain, pageId, template }),
@@ -27,16 +31,24 @@ export default function DomainsPage() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        setResult({
-          success: true,
-          message: data.message,
-        });
-      } else {
+      if (!response.ok) {
         setResult({
           success: false,
-          error: data.error || "Failed to register domain",
+          error: data.error || "Failed to create checkout",
         });
+        return;
+      }
+
+      // 跳转到 Stripe 结账
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+
+      // 或者使用 Stripe.js 重定向
+      const stripe = await stripePromise;
+      if (stripe && data.sessionId) {
+        await stripe.redirectToCheckout({ sessionId: data.sessionId });
       }
     } catch {
       setResult({
@@ -61,9 +73,9 @@ export default function DomainsPage() {
       <main className="max-w-xl mx-auto px-6 py-12">
         <div className="bg-white rounded-2xl shadow-sm border p-8">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold mb-2">Connect Custom Domain</h1>
+            <h1 className="text-2xl font-bold mb-2">Upgrade to Pro</h1>
             <p className="text-gray-600">
-              Upgrade to Pro ($6/month) to use your own domain.
+              Get a custom domain and unlock all features.
             </p>
           </div>
 
@@ -80,29 +92,16 @@ export default function DomainsPage() {
               </div>
             </div>
             <ul className="mt-4 space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <span>✓</span> Custom domain
-              </li>
-              <li className="flex items-center gap-2">
-                <span>✓</span> All premium templates
-              </li>
-              <li className="flex items-center gap-2">
-                <span>✓</span> Remove PageCraft branding
-              </li>
-              <li className="flex items-center gap-2">
-                <span>✓</span> Analytics
-              </li>
+              <li className="flex items-center gap-2"><span>✓</span> Custom domain</li>
+              <li className="flex items-center gap-2"><span>✓</span> All premium templates</li>
+              <li className="flex items-center gap-2"><span>✓</span> Remove PageCraft branding</li>
+              <li className="flex items-center gap-2"><span>✓</span> Analytics</li>
+              <li className="flex items-center gap-2"><span>✓</span> Priority support</li>
             </ul>
           </div>
 
           {result && (
-            <div
-              className={`mb-6 p-4 rounded-lg ${
-                result.success
-                  ? "bg-green-50 border border-green-200 text-green-700"
-                  : "bg-red-50 border border-red-200 text-red-700"
-              }`}
-            >
+            <div className={`mb-6 p-4 rounded-lg ${result.success ? "bg-green-50 border border-green-200 text-green-700" : "bg-red-50 border border-red-200 text-red-700"}`}>
               {result.success ? result.message : result.error}
             </div>
           )}
@@ -159,23 +158,25 @@ export default function DomainsPage() {
               disabled={loading}
               className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? "Registering..." : "Connect Domain"}
+              {loading ? "Processing..." : "Subscribe & Connect Domain - $6/month"}
             </button>
           </form>
 
           <div className="mt-8 pt-6 border-t">
-            <h3 className="font-medium text-gray-900 mb-3">Setup Instructions:</h3>
+            <h3 className="font-medium text-gray-900 mb-3">After payment:</h3>
             <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
-              <li>Register your domain above</li>
-              <li>Add a CNAME record in your DNS:</li>
+              <li>Add CNAME record in your DNS:</li>
               <li className="pl-5 font-mono text-xs bg-gray-100 p-2 rounded">
-                Name: @ or www<br />
+                Name: @<br />
                 Value: pagecraft-eight.vercel.app
               </li>
-              <li>Wait 5-10 minutes for DNS propagation</li>
-              <li>Your site will be live!</li>
+              <li>Your site will be live in 5-10 minutes!</li>
             </ol>
           </div>
+
+          <p className="mt-6 text-xs text-gray-500 text-center">
+            Powered by Stripe. Cancel anytime.
+          </p>
         </div>
       </main>
     </div>
