@@ -1,11 +1,28 @@
 import { NextResponse } from "next/server";
 import { Client } from "@notionhq/client";
 
+interface TestResult {
+  success: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+interface DebugResults {
+  timestamp: string;
+  notionTokenSet: boolean;
+  tests: {
+    search?: TestResult;
+    page?: TestResult;
+    database?: TestResult;
+  };
+  error?: string;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const pageId = searchParams.get("pageId");
 
-  const results: Record<string, unknown> = {
+  const results: DebugResults = {
     timestamp: new Date().toISOString(),
     notionTokenSet: !!process.env.NOTION_TOKEN,
     tests: {},
