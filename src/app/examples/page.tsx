@@ -1,9 +1,11 @@
 import { MinimalTemplate } from "@/components/templates/MinimalTemplate";
+import { DatabaseTemplate } from "@/components/templates/DatabaseTemplate";
 import { PageContent } from "@/lib/notion";
 
-// 示例数据，用于演示
-const sampleContent: PageContent = {
+// 示例页面数据
+const samplePageContent: PageContent = {
   title: "Marshall WU - Full Stack Developer",
+  type: "page",
   blocks: [
     {
       id: "1",
@@ -67,46 +69,11 @@ const sampleContent: PageContent = {
     },
     {
       id: "8",
-      type: "heading_3",
-      heading_3: {
-        rich_text: [{ type: "text", text: { content: "Projects" } }],
-      },
-    },
-    {
-      id: "9",
-      type: "paragraph",
-      paragraph: {
-        rich_text: [
-          { type: "text", text: { content: "PageCraft" }, annotations: { bold: true } },
-          { type: "text", text: { content: " - Turn Notion pages into beautiful websites" } },
-        ],
-      },
-    },
-    {
-      id: "10",
-      type: "bulleted_list_item",
-      bulleted_list_item: {
-        rich_text: [
-          { type: "text", text: { content: "Built with Next.js and Notion API" } },
-        ],
-      },
-    },
-    {
-      id: "11",
-      type: "bulleted_list_item",
-      bulleted_list_item: {
-        rich_text: [
-          { type: "text", text: { content: "Helping creators build their online presence" } },
-        ],
-      },
-    },
-    {
-      id: "12",
       type: "divider",
       divider: {},
     },
     {
-      id: "13",
+      id: "9",
       type: "paragraph",
       paragraph: {
         rich_text: [
@@ -117,6 +84,76 @@ const sampleContent: PageContent = {
   ],
 };
 
+// 示例数据库数据
+const sampleDatabaseContent: PageContent = {
+  title: "My Projects",
+  type: "database",
+  databaseInfo: {
+    id: "sample-db",
+    title: "My Projects",
+    description: "A collection of my side projects and experiments",
+  },
+  databaseEntries: [
+    {
+      id: "1",
+      title: "PageCraft",
+      properties: {
+        Status: "In Progress",
+        Type: "Web App",
+        Tech: "Next.js, Notion API",
+      },
+      url: "#",
+      icon: "🦾",
+    },
+    {
+      id: "2",
+      title: "AI Chatbot",
+      properties: {
+        Status: "Completed",
+        Type: "AI Tool",
+        Tech: "OpenAI, Python",
+      },
+      url: "#",
+      icon: "🤖",
+    },
+    {
+      id: "3",
+      title: "Portfolio Site",
+      properties: {
+        Status: "Live",
+        Type: "Website",
+        Tech: "React, Tailwind",
+      },
+      url: "#",
+      icon: "🎨",
+    },
+  ],
+};
+
 export default function ExamplePage() {
-  return <MinimalTemplate content={sampleContent} author="Marshall WU" />;
+  return (
+    <div className="space-y-8">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+        <h2 className="font-semibold text-blue-900 mb-2">Examples</h2>
+        <p className="text-blue-700 text-sm">
+          Below are two example templates. The first shows a regular page layout, 
+          the second shows a database rendered as cards.
+        </p>
+      </div>
+
+      <section>
+        <h3 className="text-lg font-medium text-gray-900 mb-4 px-6">Page Template</h3>
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <MinimalTemplate content={samplePageContent} author="Marshall WU" />
+        </div>
+      </section>
+
+      <section className="mt-12">
+        <h3 className="text-lg font-medium text-gray-900 mb-4 px-6">Database Template</h3>
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <DatabaseTemplate content={sampleDatabaseContent} author="Marshall WU" />
+        </div>
+      </section>
+    </div>
+  );
 }

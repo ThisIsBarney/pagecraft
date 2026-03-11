@@ -1,5 +1,6 @@
 import { getPublicPageContent } from "@/lib/notion";
 import { MinimalTemplate } from "@/components/templates/MinimalTemplate";
+import { DatabaseTemplate } from "@/components/templates/DatabaseTemplate";
 
 interface PageProps {
   params: {
@@ -7,18 +8,13 @@ interface PageProps {
   };
 }
 
-// 从 slug 提取 pageId（支持带标题的 slug）
+// 从 slug 提取 pageId
 function extractPageId(slug: string): string {
-  // 格式: pageId 或 pageId-title
   const parts = slug.split("-");
-  
-  // 检查第一部分是否是 32 字符的 pageId
   const potentialId = parts[0];
   if (potentialId.length === 32) {
     return potentialId;
   }
-  
-  // 否则整个 slug 可能是 pageId（带连字符的）
   return slug.replace(/-/g, "");
 }
 
@@ -28,9 +24,13 @@ export default async function PublicPage({ params }: PageProps) {
   try {
     const content = await getPublicPageContent(pageId);
 
+    // 根据类型选择模板
+    if (content.type === "database") {
+      return <DatabaseTemplate content={content} />;
+    }
+
     return <MinimalTemplate content={content} />;
   } catch (error) {
-    // 区分不同类型的错误
     let errorMessage = "This page may have been removed or is not public.";
     let errorTitle = "Page not found";
 
@@ -40,7 +40,7 @@ export default async function PublicPage({ params }: PageProps) {
         errorMessage = "Server configuration issue. Please contact the administrator.";
       } else if (error.message.includes("Could not find")) {
         errorTitle = "Page Not Found";
-        errorMessage = "The Notion page could not be found. Make sure:\n• The page ID is correct\n• The page is shared with the PageCraft integration";
+        errorMessage = "The Notion page or database could not be found. Make sure:\n• The ID is correct\n• It is shared with the PageCraft integration";
       }
     }
 
@@ -62,6 +62,5 @@ export default async function PublicPage({ params }: PageProps) {
   }
 }
 
-// 动态渲染
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

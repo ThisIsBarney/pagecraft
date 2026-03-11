@@ -35,14 +35,84 @@ export interface Block {
   [key: string]: any;
 }
 
+export interface DatabaseEntry {
+  id: string;
+  title: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  properties: Record<string, any>;
+  url: string;
+  cover?: string | null;
+  icon?: string | null;
+}
+
+export interface DatabaseInfo {
+  id: string;
+  title: string;
+  description?: string;
+}
+
 export interface PageContent {
   title: string;
   blocks: Block[];
+  type: "page" | "database";
+  databaseInfo?: DatabaseInfo;
+  databaseEntries?: DatabaseEntry[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractTitle(page: any): string {
   return page.properties?.title?.title?.[0]?.plain_text || "Untitled";
+}
+
+// 从数据库条目提取标题
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractEntryTitle(entry: any): string {
+  // 尝试各种可能的标题字段
+  const properties = entry.properties || {};
+  
+  // 找 title 类型的属性
+  for (const [key, value] of Object.entries(properties)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const prop = value as any;
+    if (prop.type === "title" && prop.title?.length > 0) {
+      return prop.title[0].plain_text || "Untitled";
+    }
+  }
+  
+  return "Untitled";
+}
+
+// 提取属性值（用于显示）
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractPropertyValue(prop: any): string {
+  if (!prop) return "";
+  
+  switch (prop.type) {
+    case "title":
+      return prop.title?.[0]?.plain_text || "";
+    case "rich_text":
+      return prop.rich_text?.[0]?.plain_text || "";
+    case "select":
+      return prop.select?.name || "";
+    case "multi_select":
+      return prop.multi_select?.map((s: { name: string }) => s.name).join(", ") || "";
+    case "date":
+      return prop.date?.start || "";
+    case "url":
+      return prop.url || "";
+    case "email":
+      return prop.email || "";
+    case "phone_number":
+      return prop.phone_number || "";
+    case "number":
+      return prop.number?.toString() || "";
+    case "checkbox":
+      return prop.checkbox ? "✓" : "";
+    case "formula":
+      return prop.formula?.string || prop.formula?.number?.toString() || "";
+    default:
+      return "";
+  }
 }
 
 // 递归获取所有块（包括嵌套）
@@ -73,6 +143,58 @@ async function getAllBlocks(blockId: string): Promise<Block[]> {
   return blocks;
 }
 
+// 获取数据库条目
+async function getDatabaseEntries(databaseId: string): Promise<DatabaseEntry[]> {
+  const notion = getNotionClient();
+  const entries: DatabaseEntry[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const response = await notion.databases.query({
+      database_id: databaseId,
+      start_cursor: cursor,
+    });
+
+    for (const entry of response.results) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const entryAny = entry as any;
+      
+      // 提取所有属性
+      const properties: Record<string, string> = {};
+      for (const [key, value] of Object.entries(entryAny.properties || {})) {
+        properties[key] = extractPropertyValue(value);
+      }
+
+      entries.push({
+        id: entry.id,
+        title: extractEntryTitle(entry),
+        properties,
+        url: entryAny.url,
+        cover: entryAny.cover?.external?.url || entryAny.cover?.file?.url || null,
+        icon: entryAny.icon?.emoji || entryAny.icon?.external?.url || null,
+      });
+    }
+
+    cursor = response.next_cursor ?? undefined;
+  } while (cursor);
+
+  return entries;
+}
+
+// 获取数据库信息
+async function getDatabaseInfo(databaseId: string): Promise<DatabaseInfo> {
+  const notion = getNotionClient();
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = await notion.databases.retrieve({ database_id: databaseId }) as any;
+  
+  return {
+    id: databaseId,
+    title: db.title?.[0]?.plain_text || "Untitled Database",
+    description: db.description?.[0]?.plain_text || "",
+  };
+}
+
 // 获取页面内容（包含嵌套块）
 export async function getPageContent(pageId: string): Promise<PageContent> {
   const notion = getNotionClient();
@@ -80,15 +202,37 @@ export async function getPageContent(pageId: string): Promise<PageContent> {
   // 清理 pageId
   const cleanPageId = pageId.replace(/-/g, "");
 
-  // 获取页面信息
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const page = await notion.pages.retrieve({ page_id: cleanPageId }) as any;
-  const title = extractTitle(page);
+  // 先尝试作为页面获取
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const page = await notion.pages.retrieve({ page_id: cleanPageId }) as any;
+    const title = extractTitle(page);
 
-  // 递归获取所有块
-  const blocks = await getAllBlocks(cleanPageId);
+    // 递归获取所有块
+    const blocks = await getAllBlocks(cleanPageId);
 
-  return { title, blocks };
+    return { 
+      title, 
+      blocks,
+      type: "page",
+    };
+  } catch {
+    // 不是页面，尝试作为数据库
+    try {
+      const dbInfo = await getDatabaseInfo(cleanPageId);
+      const entries = await getDatabaseEntries(cleanPageId);
+
+      return {
+        title: dbInfo.title,
+        blocks: [],
+        type: "database",
+        databaseInfo: dbInfo,
+        databaseEntries: entries,
+      };
+    } catch (dbError) {
+      throw new Error("Could not find page or database with this ID");
+    }
+  }
 }
 
 // 获取公开页面内容
