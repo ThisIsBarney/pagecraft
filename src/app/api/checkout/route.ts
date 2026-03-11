@@ -3,6 +3,13 @@ import { stripe, STRIPE_CONFIG } from "@/lib/stripe";
 
 export async function POST(request: Request) {
   try {
+    if (!stripe) {
+      return NextResponse.json(
+        { error: "Payment not configured" },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const { domain, pageId, template } = body;
 
