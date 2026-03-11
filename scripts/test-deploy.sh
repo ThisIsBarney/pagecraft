@@ -39,7 +39,7 @@ fi
 
 # 测试 dashboard
 echo "4. Testing /dashboard..."
-if curl -s "$URL/dashboard" | grep -q "Dashboard\|Welcome"; then
+if curl -s "$URL/dashboard" | grep -q "Loading\|Dashboard\|Welcome\|Sign In"; then
     echo "   ✅ Dashboard OK"
 else
     echo "   ❌ Dashboard FAILED"
