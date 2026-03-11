@@ -153,7 +153,8 @@ async function getDatabaseEntries(databaseId: string): Promise<DatabaseEntry[]> 
   let cursor: string | undefined;
 
   do {
-    const response = await notion.databases.query({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await (notion.databases as any).query({
       database_id: databaseId,
       start_cursor: cursor,
     });
