@@ -1,4 +1,4 @@
-import { Client, isFullDatabase } from "@notionhq/client";
+import { Client } from "@notionhq/client";
 
 const getNotionClient = () => {
   const token = process.env.NOTION_TOKEN;
@@ -7,9 +7,6 @@ const getNotionClient = () => {
   }
   return new Client({ auth: token });
 };
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _isFullDatabase = isFullDatabase; // Ensure import is used
 
 export interface PageInfo {
   id: string;
@@ -70,10 +67,8 @@ function extractTitle(page: any): string {
 // 从数据库条目提取标题
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractEntryTitle(entry: any): string {
-  // 尝试各种可能的标题字段
   const properties = entry.properties || {};
   
-  // 找 title 类型的属性
   for (const [, value] of Object.entries(properties)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const prop = value as any;
@@ -85,7 +80,7 @@ function extractEntryTitle(entry: any): string {
   return "Untitled";
 }
 
-// 提取属性值（用于显示）
+// 提取属性值
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractPropertyValue(prop: any): string {
   if (!prop) return "";
@@ -118,7 +113,7 @@ function extractPropertyValue(prop: any): string {
   }
 }
 
-// 递归获取所有块（包括嵌套）
+// 递归获取所有块
 async function getAllBlocks(blockId: string): Promise<Block[]> {
   const notion = getNotionClient();
   const blocks: Block[] = [];
@@ -133,7 +128,6 @@ async function getAllBlocks(blockId: string): Promise<Block[]> {
     for (const block of response.results as Block[]) {
       blocks.push(block);
 
-      // 递归获取嵌套块
       if ("has_children" in block && block.has_children) {
         const children = await getAllBlocks(block.id);
         block.children = children;
@@ -163,7 +157,6 @@ async function getDatabaseEntries(databaseId: string): Promise<DatabaseEntry[]> 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const entryAny = entry as any;
       
-      // 提取所有属性
       const properties: Record<string, string> = {};
       for (const [key, value] of Object.entries(entryAny.properties || {})) {
         properties[key] = extractPropertyValue(value);
@@ -199,11 +192,9 @@ async function getDatabaseInfo(databaseId: string): Promise<DatabaseInfo> {
   };
 }
 
-// 获取页面内容（包含嵌套块）
+// 获取页面内容（包含详细错误信息）
 export async function getPageContent(pageId: string): Promise<PageContent> {
   const notion = getNotionClient();
-
-  // 清理 pageId
   const cleanPageId = pageId.replace(/-/g, "");
 
   // 先尝试作为页面获取
@@ -211,8 +202,6 @@ export async function getPageContent(pageId: string): Promise<PageContent> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const page = await notion.pages.retrieve({ page_id: cleanPageId }) as any;
     const title = extractTitle(page);
-
-    // 递归获取所有块
     const blocks = await getAllBlocks(cleanPageId);
 
     return { 
@@ -220,7 +209,9 @@ export async function getPageContent(pageId: string): Promise<PageContent> {
       blocks,
       type: "page",
     };
-  } catch {
+  } catch (pageError) {
+    console.log("Page retrieve failed:", (pageError as Error).message);
+    
     // 不是页面，尝试作为数据库
     try {
       const dbInfo = await getDatabaseInfo(cleanPageId);
@@ -233,8 +224,18 @@ export async function getPageContent(pageId: string): Promise<PageContent> {
         databaseInfo: dbInfo,
         databaseEntries: entries,
       };
-    } catch {
-      throw new Error("Could not find page or database with this ID");
+    } catch (dbError) {
+      console.log("Database retrieve failed:", (dbError as Error).message);
+      
+      // 返回详细错误
+      const pageErrMsg = (pageError as Error).message;
+      const dbErrMsg = (dbError as Error).message;
+      
+      throw new Error(
+        `Could not find page or database. ` +
+        `Page error: ${pageErrMsg}. ` +
+        `Database error: ${dbErrMsg}`
+      );
     }
   }
 }
