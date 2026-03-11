@@ -23,7 +23,6 @@ const userStore: Record<string, {
 
 // 域名配置
 export interface DomainConfig {
-  domain: string;
   pageId: string;
   template: string;
   userEmail?: string;
