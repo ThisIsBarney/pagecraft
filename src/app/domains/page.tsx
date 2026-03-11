@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { loadStripe } from "@stripe/stripe-js";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
 
 export default function DomainsPage() {
   const [domain, setDomain] = useState("");
@@ -45,11 +43,7 @@ export default function DomainsPage() {
         return;
       }
 
-      // 或者使用 Stripe.js 重定向
-      const stripe = await stripePromise;
-      if (stripe && data.sessionId) {
-        await stripe.redirectToCheckout({ sessionId: data.sessionId });
-      }
+      // Stripe.js 重定向已在前面的 window.location 处理
     } catch {
       setResult({
         success: false,
