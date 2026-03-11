@@ -1,8 +1,9 @@
 import { MinimalTemplate } from "@/components/templates/MinimalTemplate";
+import { DesignerTemplate } from "@/components/templates/DesignerTemplate";
+import { DeveloperTemplate } from "@/components/templates/DeveloperTemplate";
 import { DatabaseTemplate } from "@/components/templates/DatabaseTemplate";
 import { PageContent } from "@/lib/notion";
 
-// 示例页面数据
 const samplePageContent: PageContent = {
   title: "Marshall WU - Full Stack Developer",
   type: "page",
@@ -11,30 +12,33 @@ const samplePageContent: PageContent = {
       id: "1",
       type: "heading_1",
       heading_1: {
-        rich_text: [{ type: "text", text: { content: "Marshall WU" } }],
+        rich_text: [{ type: "text", text: { content: "Hello, I'm Marshall" } }],
       },
     },
     {
       id: "2",
-      type: "heading_2",
-      heading_2: {
-        rich_text: [{ type: "text", text: { content: "Full Stack Developer & Indie Maker" } }],
-      },
-    },
-    {
-      id: "3",
       type: "paragraph",
       paragraph: {
         rich_text: [
-          { type: "text", text: { content: "Hi! I'm Marshall, a passionate developer building useful tools for the web." } },
+          { type: "text", text: { content: "I build products that solve real problems. Currently focused on AI tools and web applications." } },
         ],
       },
     },
     {
+      id: "3",
+      type: "heading_2",
+      heading_2: {
+        rich_text: [{ type: "text", text: { content: "Projects" } }],
+      },
+    },
+    {
       id: "4",
-      type: "heading_3",
-      heading_3: {
-        rich_text: [{ type: "text", text: { content: "What I Do" } }],
+      type: "bulleted_list_item",
+      bulleted_list_item: {
+        rich_text: [
+          { type: "text", text: { content: "PageCraft" }, annotations: { bold: true } },
+          { type: "text", text: { content: " - Turn Notion into websites" } },
+        ],
       },
     },
     {
@@ -42,56 +46,37 @@ const samplePageContent: PageContent = {
       type: "bulleted_list_item",
       bulleted_list_item: {
         rich_text: [
-          { type: "text", text: { content: "Web Development" }, annotations: { bold: true } },
-          { type: "text", text: { content: " - React, Next.js, Node.js" } },
+          { type: "text", text: { content: "AI Assistant" }, annotations: { bold: true } },
+          { type: "text", text: { content: " - Personal AI helper" } },
         ],
       },
     },
     {
       id: "6",
-      type: "bulleted_list_item",
-      bulleted_list_item: {
-        rich_text: [
-          { type: "text", text: { content: "Product Design" }, annotations: { bold: true } },
-          { type: "text", text: { content: " - From idea to MVP" } },
-        ],
+      type: "heading_2",
+      heading_2: {
+        rich_text: [{ type: "text", text: { content: "Contact" } }],
       },
     },
     {
       id: "7",
-      type: "bulleted_list_item",
-      bulleted_list_item: {
-        rich_text: [
-          { type: "text", text: { content: "Open Source" }, annotations: { bold: true } },
-          { type: "text", text: { content: " - Contributing to the community" } },
-        ],
-      },
-    },
-    {
-      id: "8",
-      type: "divider",
-      divider: {},
-    },
-    {
-      id: "9",
       type: "paragraph",
       paragraph: {
         rich_text: [
-          { type: "text", text: { content: "Built with ❤️ and lots of coffee" }, annotations: { italic: true } },
+          { type: "text", text: { content: "Email: hello@marshall.wu" } },
         ],
       },
     },
   ],
 };
 
-// 示例数据库数据
 const sampleDatabaseContent: PageContent = {
   title: "My Projects",
   type: "database",
   databaseInfo: {
     id: "sample-db",
     title: "My Projects",
-    description: "A collection of my side projects and experiments",
+    description: "A collection of my side projects",
   },
   databaseEntries: [
     {
@@ -132,28 +117,75 @@ const sampleDatabaseContent: PageContent = {
 
 export default function ExamplePage() {
   return (
-    <div className="space-y-8">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
-        <h2 className="font-semibold text-blue-900 mb-2">Examples</h2>
-        <p className="text-blue-700 text-sm">
-          Below are two example templates. The first shows a regular page layout, 
-          the second shows a database rendered as cards.
-        </p>
-      </div>
-
-      <section>
-        <h3 className="text-lg font-medium text-gray-900 mb-4 px-6">Page Template</h3>
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <MinimalTemplate content={samplePageContent} author="Marshall WU" />
+    <div className="min-h-screen bg-gray-100">
+      <header className="bg-white border-b sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Template Gallery</h1>
+            <a href="/create" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+              Create Your Site →
+            </a>
+          </div>
         </div>
-      </section>
+      </header>
 
-      <section className="mt-12">
-        <h3 className="text-lg font-medium text-gray-900 mb-4 px-6">Database Template</h3>
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <DatabaseTemplate content={sampleDatabaseContent} author="Marshall WU" />
-        </div>
-      </section>
+      <main className="max-w-6xl mx-auto px-6 py-12 space-y-16">
+        {/* Minimal Template */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Minimal</h2>
+              <p className="text-gray-600">Clean, simple, professional. Perfect for blogs and resumes.</p>
+            </div>
+            <a href="/p/demo-minimal?template=minimal" className="text-blue-600 hover:underline">Preview →</a>
+          </div>
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
+            <MinimalTemplate content={samplePageContent} author="Marshall WU" />
+          </div>
+        </section>
+
+        {/* Designer Template */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Designer</h2>
+              <p className="text-gray-600">Bold, creative, dark mode. For portfolios and creative work.</p>
+            </div>
+            <a href="/p/demo-designer?template=designer" className="text-blue-600 hover:underline">Preview →</a>
+          </div>
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
+            <DesignerTemplate content={samplePageContent} author="Marshall WU" />
+          </div>
+        </section>
+
+        {/* Developer Template */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Developer</h2>
+              <p className="text-gray-600">VS Code style. Perfect for dev blogs and documentation.</p>
+            </div>
+            <a href="/p/demo-developer?template=developer" className="text-blue-600 hover:underline">Preview →</a>
+          </div>
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
+            <DeveloperTemplate content={samplePageContent} author="Marshall WU" />
+          </div>
+        </section>
+
+        {/* Database Template */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Database</h2>
+              <p className="text-gray-600">Card layout for Notion databases. Great for portfolios and collections.</p>
+            </div>
+            <span className="text-gray-400">Auto-selected for databases</span>
+          </div>
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
+            <DatabaseTemplate content={sampleDatabaseContent} author="Marshall WU" />
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

@@ -3,9 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const templates = [
+  { id: "minimal", name: "Minimal", description: "Clean and simple", color: "bg-white" },
+  { id: "designer", name: "Designer", description: "Bold and creative", color: "bg-gradient-to-br from-violet-500 to-fuchsia-500" },
+  { id: "developer", name: "Developer", description: "Code editor style", color: "bg-[#1e1e1e]" },
+];
+
 export default function CreatePage() {
   const [pageId, setPageId] = useState("");
   const [author, setAuthor] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState("minimal");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -20,26 +27,21 @@ export default function CreatePage() {
     setError("");
     setLoading(true);
 
-    // 清理 pageId（移除空格和连字符）
     const cleanId = pageId.trim().replace(/-/g, "");
 
-    // 验证长度
     if (cleanId.length !== 32) {
       setError("Invalid Page ID. Notion Page IDs are 32 characters long.");
       setLoading(false);
       return;
     }
 
-    // 生成 slug
     const slug = author
       ? `${cleanId}-${author.toLowerCase().replace(/\s+/g, "-")}`
       : cleanId;
 
-    // 跳转到预览页面
-    router.push(`/p/${slug}`);
+    router.push(`/p/${slug}?template=${selectedTemplate}`);
   };
 
-  // 从 URL 提取 ID 的辅助函数
   const extractFromUrl = (url: string) => {
     const match = url.match(/([a-f0-9]{32})/i);
     if (match) {
@@ -64,7 +66,7 @@ export default function CreatePage() {
         <div className="bg-white rounded-2xl shadow-sm border p-8">
           <h1 className="text-2xl font-bold mb-2">Create your site</h1>
           <p className="text-gray-600 mb-8">
-            Enter your Notion page ID to generate a beautiful website.
+            Choose a template and enter your Notion page ID.
           </p>
 
           {error && (
@@ -72,6 +74,31 @@ export default function CreatePage() {
               {error}
             </div>
           )}
+
+          {/* Template Selection */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Choose a template
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {templates.map((template) => (
+                <button
+                  key={template.id}
+                  type="button"
+                  onClick={() => setSelectedTemplate(template.id)}
+                  className={`p-4 rounded-xl border-2 text-left transition-all ${
+                    selectedTemplate === template.id
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className={`w-full h-16 rounded-lg mb-3 ${template.color} ${template.id === "developer" ? "border border-gray-600" : ""}`} />
+                  <div className="font-medium text-sm">{template.name}</div>
+                  <div className="text-xs text-gray-500">{template.description}</div>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -99,10 +126,6 @@ export default function CreatePage() {
                   Paste from clipboard
                 </button>
               </div>
-              <p className="mt-2 text-sm text-gray-500">
-                Find this in your Notion page URL. It&apos;s the 32-character string
-                after the page title.
-              </p>
             </div>
 
             <div>
@@ -133,15 +156,6 @@ export default function CreatePage() {
               )}
             </button>
           </form>
-
-          <div className="mt-8 pt-6 border-t">
-            <h3 className="font-medium text-gray-900 mb-2">Before you start:</h3>
-            <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
-              <li>Your Notion page must be shared with the PageCraft integration</li>
-              <li>Open your page → Share → Add connections → PageCraft</li>
-              <li>Only regular pages are supported (not databases yet)</li>
-            </ul>
-          </div>
         </div>
       </main>
     </div>
