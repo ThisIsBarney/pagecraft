@@ -8,7 +8,7 @@ const sessions: Record<string, string> = {};
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, name, action } = body;
+    const { email, name } = body;
 
     if (!email) {
       return NextResponse.json({ error: "Email required" }, { status: 400 });
