@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-
-// 内存存储域名配置
-const domainStore: Record<string, {
-  pageId: string;
-  template: string;
-  verified: boolean;
-  subscriptionId?: string;
-}> = {};
+import { domainsDb } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
@@ -36,13 +29,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing domain info" }, { status: 400 });
     }
 
-    // 保存域名配置
-    domainStore[domain] = {
+    // 保存域名配置到持久化存储
+    await domainsDb.set(domain, {
+      domain,
       pageId,
       template: template || "minimal",
       verified: true,
       subscriptionId: typeof session.subscription === 'string' ? session.subscription : undefined,
-    };
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
 
     console.log("Domain registered:", domain, "->", pageId);
 
@@ -60,5 +56,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
-

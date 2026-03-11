@@ -12,7 +12,7 @@ export default function Home() {
           </div>
           <nav className="flex gap-6 text-sm text-gray-600">
             <Link href="/examples" className="hover:text-gray-900">Examples</Link>
-            <Link href="/domains" className="hover:text-gray-900">Domains</Link>
+            <Link href="/dashboard" className="hover:text-gray-900">Dashboard</Link>
           </nav>
         </div>
       </header>
