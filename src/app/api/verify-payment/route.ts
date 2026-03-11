@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     await domainsDb.set(domain, {
       pageId,
       template: template || "minimal",
-      userEmail: customerEmail,
+      userEmail: customerEmail || undefined,
       verified: true,
       subscriptionId: typeof session.subscription === 'string' ? session.subscription : undefined,
       createdAt: new Date().toISOString(),
