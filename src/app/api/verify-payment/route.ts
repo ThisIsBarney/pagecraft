@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       pageId,
       template: template || "minimal",
       verified: true,
-      subscriptionId: session.subscription || undefined,
+      subscriptionId: typeof session.subscription === 'string' ? session.subscription : undefined,
     };
 
     console.log("Domain registered:", domain, "->", pageId);
