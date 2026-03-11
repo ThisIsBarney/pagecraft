@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { domainsDb } from "@/lib/db";
+
+// Edge Runtime 兼容的存储（使用 Vercel Edge Config 或内存）
+// 生产环境应该使用 Redis 或 Edge Config
+const domainCache: Record<string, { pageId: string; template: string }> = {};
 
 export async function middleware(request: NextRequest) {
   const host = request.headers.get("host") || "";
@@ -14,10 +17,10 @@ export async function middleware(request: NextRequest) {
     host.includes("127.0.0.1");
 
   if (!isMainDomain) {
-    // 从数据库获取域名配置
-    const config = await domainsDb.get(host);
+    // 从缓存获取域名配置
+    const config = domainCache[host];
     
-    if (config && config.verified) {
+    if (config) {
       // 自定义域名，重写到对应页面
       url.pathname = `/p/${config.pageId}`;
       url.searchParams.set("template", config.template);
