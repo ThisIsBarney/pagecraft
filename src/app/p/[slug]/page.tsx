@@ -3,6 +3,7 @@ import { MinimalTemplate } from "@/components/templates/MinimalTemplate";
 import { DesignerTemplate } from "@/components/templates/DesignerTemplate";
 import { DeveloperTemplate } from "@/components/templates/DeveloperTemplate";
 import { DatabaseTemplate } from "@/components/templates/DatabaseTemplate";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 
 interface PageProps {
   params: {
@@ -45,12 +46,22 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
     // Database 类型固定使用 DatabaseTemplate
     if (content.type === "database") {
-      return <DatabaseTemplate content={content} />;
+      return (
+        <>
+          <AnalyticsTracker pageId={pageId} />
+          <DatabaseTemplate content={content} />
+        </>
+      );
     }
 
     // 根据模板参数选择模板
     const Template = getTemplate(templateName);
-    return <Template content={content} />;
+    return (
+      <>
+        <AnalyticsTracker pageId={pageId} />
+        <Template content={content} />
+      </>
+    );
   } catch (error) {
     let errorMessage = "This page may have been removed or is not public.";
     let errorTitle = "Page not found";

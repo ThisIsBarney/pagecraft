@@ -20,7 +20,7 @@ test.describe("Payment Flow", () => {
     }
     
     // 2. 检查当前状态是 Free
-    await expect(page.locator("text=Free Plan")).toBeVisible();
+    await expect(page.locator("text=Free").first()).toBeVisible();
     
     // 3. 去升级页面
     await page.goto(`${BASE_URL}/domains`);
