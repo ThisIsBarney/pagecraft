@@ -159,12 +159,12 @@ export default function DashboardPage() {
                   <div className="text-sm text-gray-500">From Notion page</div>
                 </a>
                 <a
-                  href="/domains"
+                  href={isPro ? "/manage-domains" : "/domains"}
                   className="p-4 border border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-colors"
                 >
                   <div className="text-2xl mb-2">🌐</div>
-                  <div className="font-medium">Connect Domain</div>
-                  <div className="text-sm text-gray-500">Use your own domain</div>
+                  <div className="font-medium">{isPro ? "Manage Domains" : "Connect Domain"}</div>
+                  <div className="text-sm text-gray-500">{isPro ? "Add or edit your domains" : "Use your own domain"}</div>
                 </a>
               </div>
             </div>
