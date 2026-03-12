@@ -52,7 +52,6 @@ export default function ManageDomainsPage() {
       });
 
       if (res.ok) {
-        const data = await res.json();
         setDomains([...domains, {
           domain: newDomain,
           pageId: newPageId,
