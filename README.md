@@ -22,6 +22,10 @@ Notion → 精美个人主页生成器
 
 ## 快速开始
 
+### 系统要求
+- Node.js >= 18.17.0 (推荐使用 LTS 版本)
+- npm 或 yarn
+
 ### 环境变量
 
 复制 `.env.local.example` 到 `.env.local` 并填写：
@@ -45,6 +49,10 @@ NEXT_PUBLIC_URL=http://localhost:3000
 ### 安装依赖
 
 ```bash
+# 如果你使用 nvm，确保使用正确的 Node.js 版本
+nvm use
+
+# 安装依赖
 npm install
 ```
 
