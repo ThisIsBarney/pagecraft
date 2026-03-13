@@ -21,6 +21,19 @@ const userStore: Record<string, {
   updatedAt: string;
 }> = {};
 
+const userPagesStore: Record<string, {
+  id: string;
+  userId: string;
+  notionPageId: string;
+  title: string;
+  slug: string;
+  template: string;
+  settings: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  lastAccessedAt: string;
+}> = {};
+
 // 域名配置
 export interface DomainConfig {
   pageId: string;
@@ -41,6 +54,20 @@ export interface User {
   subscriptionStatus: 'free' | 'active' | 'cancelled' | 'past_due';
   createdAt: string;
   updatedAt: string;
+}
+
+// 用户页面
+export interface UserPage {
+  id: string;
+  userId: string;
+  notionPageId: string;
+  title: string;
+  slug: string;
+  template: string;
+  settings: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  lastAccessedAt: string;
 }
 
 // 域名操作
@@ -78,5 +105,32 @@ export const usersDb = {
   
   async set(id: string, user: User): Promise<void> {
     userStore[id] = user;
+  },
+};
+
+// 用户页面操作
+export const userPagesDb = {
+  async getAll(): Promise<Record<string, UserPage>> {
+    return userPagesStore;
+  },
+  
+  async get(id: string): Promise<UserPage | null> {
+    return userPagesStore[id] || null;
+  },
+  
+  async getByUserId(userId: string): Promise<UserPage[]> {
+    return Object.values(userPagesStore).filter(p => p.userId === userId);
+  },
+  
+  async getByNotionPageId(notionPageId: string): Promise<UserPage | null> {
+    return Object.values(userPagesStore).find(p => p.notionPageId === notionPageId) || null;
+  },
+  
+  async set(id: string, page: UserPage): Promise<void> {
+    userPagesStore[id] = page;
+  },
+  
+  async delete(id: string): Promise<void> {
+    delete userPagesStore[id];
   },
 };

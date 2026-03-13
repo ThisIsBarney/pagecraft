@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import AuthModal from "@/components/AuthModal";
+import { useAuth } from "@/hooks/useAuth";
 
 const templates = [
   { id: "minimal", name: "Minimal", description: "Clean and simple", color: "bg-white" },
@@ -15,7 +17,10 @@ export default function CreatePage() {
   const [selectedTemplate, setSelectedTemplate] = useState("minimal");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [shouldSavePage, setShouldSavePage] = useState(false);
   const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,17 +34,106 @@ export default function CreatePage() {
 
     const cleanId = pageId.trim().replace(/-/g, "");
 
-    if (cleanId.length !== 32) {
-      setError("Invalid Page ID. Notion Page IDs are 32 characters long.");
+    // Validate format (32 hex characters)
+    if (!/^[a-f0-9]{32}$/i.test(cleanId)) {
+      setError("Invalid Page ID format. Notion Page IDs should be 32 hexadecimal characters (with or without hyphens). Example: 1a2b3c4d5e6f7g8h9i0j1234567890ab");
       setLoading(false);
       return;
     }
 
-    const slug = author
-      ? `${cleanId}-${author.toLowerCase().replace(/\s+/g, "-")}`
-      : cleanId;
+    // Validate the page exists and is accessible
+    try {
+      const response = await fetch(`/api/validate-page?pageId=${cleanId}`);
+      const data = await response.json();
 
-    router.push(`/p/${slug}?template=${selectedTemplate}`);
+      if (!response.ok || !data.success) {
+        setError(data.error || "Failed to validate page. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Page is valid, show success message
+      console.log(`Valid ${data.type}: ${data.title}`);
+    } catch (validationError) {
+      setError("Unable to validate page. Please check your connection and try again.");
+      setLoading(false);
+      return;
+    }
+
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      setLoading(false);
+      setShouldSavePage(true);
+      setShowAuthModal(true);
+      return;
+    }
+
+    // User is authenticated, proceed to generate and save
+    await generateAndSavePage(cleanId);
+  };
+
+  const generateAndSavePage = async (cleanId: string) => {
+    try {
+      const slug = author
+        ? `${cleanId}-${author.toLowerCase().replace(/\s+/g, "-")}`
+        : cleanId;
+
+      // If user wants to save the page, call API
+      if (shouldSavePage && user) {
+        await savePageToUser(cleanId, slug);
+      }
+
+      router.push(`/p/${slug}?template=${selectedTemplate}`);
+    } catch (error) {
+      setError("Failed to save page. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  const savePageToUser = async (pageId: string, slug: string) => {
+    const response = await fetch("/api/user-pages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        notionPageId: pageId,
+        title: `Page ${new Date().toLocaleDateString()}`,
+        slug,
+        template: selectedTemplate,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to save page");
+    }
+  };
+
+  const handleAuthSuccess = async (user: { id: string; email: string; name: string }) => {
+    // If user was trying to save a page, proceed with generation
+    if (shouldSavePage && pageId) {
+      const cleanId = pageId.trim().replace(/-/g, "");
+      
+      // Re-validate before proceeding (in case of network issues)
+      if (cleanId.length === 32) {
+        setLoading(true);
+        
+        // Quick validation before proceeding
+        try {
+          const response = await fetch(`/api/validate-page?pageId=${cleanId}`);
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            setError(data.error || "Page validation failed after sign in. Please try again.");
+            setLoading(false);
+            return;
+          }
+
+          await generateAndSavePage(cleanId);
+        } catch (error) {
+          setError("Unable to validate page after sign in. Please try again.");
+          setLoading(false);
+        }
+      }
+    }
   };
 
   const extractFromUrl = (url: string) => {
@@ -70,8 +164,17 @@ export default function CreatePage() {
           </p>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm whitespace-pre-line">
+              <div className="font-medium mb-1">⚠️ Unable to create site</div>
               {error}
+              <div className="mt-3 pt-3 border-t border-red-200 text-xs text-red-600">
+                <div className="font-medium">Tips:</div>
+                <ul className="list-disc pl-4 mt-1 space-y-1">
+                  <li>Find the Page ID in your Notion page URL: <code className="bg-red-100 px-1 rounded">.../notion.so/workspace/<span className="font-bold">page-id-here</span></code></li>
+                  <li>Make sure the page is shared with the PageCraft integration</li>
+                  <li>The page must be accessible (not private to you only)</li>
+                </ul>
+              </div>
             </div>
           )}
 
@@ -141,6 +244,32 @@ export default function CreatePage() {
               />
             </div>
 
+            {/* Auth Status */}
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-sm text-gray-900">
+                    {isAuthenticated ? `Signed in as ${user?.email}` : "Not signed in"}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {isAuthenticated 
+                      ? "Your page will be saved to your account"
+                      : "Sign in to save this page and access it later"
+                    }
+                  </div>
+                </div>
+                {!isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAuthModal(true)}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    Sign in
+                  </button>
+                )}
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -149,15 +278,31 @@ export default function CreatePage() {
               {loading ? (
                 <>
                   <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Generating...
+                  {isAuthenticated ? "Validating and generating..." : "Validating..."}
                 </>
               ) : (
-                "Generate Site →"
+                <>
+                  {isAuthenticated ? "Generate & Save →" : "Generate Site →"}
+                  {!isAuthenticated && (
+                    <span className="text-xs bg-blue-800 text-white px-2 py-1 rounded-full">
+                      Free
+                    </span>
+                  )}
+                </>
               )}
             </button>
           </form>
         </div>
       </main>
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false);
+          setShouldSavePage(false);
+        }}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }
