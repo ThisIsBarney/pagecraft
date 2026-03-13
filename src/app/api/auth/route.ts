@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { usersDb } from "@/lib/db";
-
-// 简单的 session 存储（生产环境用 Redis）
-const sessions: Record<string, string> = {};
+import { sessions } from "@/lib/auth";
 
 // 注册/登录
 export async function POST(request: Request) {

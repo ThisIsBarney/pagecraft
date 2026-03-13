@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Domain {
   domain: string;
@@ -10,13 +11,22 @@ interface Domain {
   verified: boolean;
 }
 
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+  subscriptionStatus: string;
+}
+
 export default function ManageDomainsPage() {
+  const [user, setUser] = useState<User | null>(null);
   const [domains, setDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(true);
   const [newDomain, setNewDomain] = useState("");
   const [newPageId, setNewPageId] = useState("");
   const [newTemplate, setNewTemplate] = useState("minimal");
   const [adding, setAdding] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     // 获取当前用户
@@ -24,17 +34,32 @@ export default function ManageDomainsPage() {
       .then((res) => res.json())
       .then(async (data) => {
         if (data.user) {
+          setUser(data.user);
+          
+          // 检查是否是 Pro 用户
+          if (data.user.subscriptionStatus !== 'active') {
+            // 不是 Pro 用户，重定向到升级页面
+            router.push('/domains');
+            return;
+          }
+          
           // 获取用户的域名
           const domainsRes = await fetch(`/api/user-domains?email=${encodeURIComponent(data.user.email)}`);
           if (domainsRes.ok) {
             const domainsData = await domainsRes.json();
             setDomains(domainsData.domains || []);
           }
+        } else {
+          // 未登录，重定向到 dashboard
+          router.push('/dashboard');
         }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
-  }, []);
+      .catch(() => {
+        setLoading(false);
+        router.push('/dashboard');
+      });
+  }, [router]);
 
   const handleAddDomain = async (e: React.FormEvent) => {
     e.preventDefault();
