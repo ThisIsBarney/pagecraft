@@ -32,20 +32,18 @@ export async function middleware(request: NextRequest) {
   }
 
   // 权限检查
-  // 1. 需要登录的页面
-  const protectedPaths = ['/dashboard', '/manage-domains', '/analytics'];
-  if (protectedPaths.some(path => pathname.startsWith(path))) {
+  // 1. 需要登录的页面（除了 dashboard 本身，因为它处理登录）
+  if (pathname.startsWith('/manage-domains') || pathname.startsWith('/analytics')) {
     const authenticated = await isAuthenticated(request);
     if (!authenticated) {
-      // 重定向到登录页面
+      // 重定向到 dashboard（它会显示登录表单）
       url.pathname = '/dashboard';
       return NextResponse.redirect(url);
     }
   }
 
   // 2. 需要 Pro 订阅的页面
-  const proOnlyPaths = ['/manage-domains'];
-  if (proOnlyPaths.some(path => pathname.startsWith(path))) {
+  if (pathname.startsWith('/manage-domains')) {
     const isPro = await isProUser(request);
     if (!isPro) {
       // 重定向到升级页面
