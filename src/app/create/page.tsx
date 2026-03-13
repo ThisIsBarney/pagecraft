@@ -84,7 +84,7 @@ export default function CreatePage() {
       }
 
       router.push(`/p/${slug}?template=${selectedTemplate}`);
-    } catch (error) {
+    } catch (_error) {
       setError("Failed to save page. Please try again.");
       setLoading(false);
     }
@@ -107,7 +107,7 @@ export default function CreatePage() {
     }
   };
 
-  const handleAuthSuccess = async (user: { id: string; email: string; name: string }) => {
+  const handleAuthSuccess = async (_user: { id: string; email: string; name: string }) => {
     // If user was trying to save a page, proceed with generation
     if (shouldSavePage && pageId) {
       const cleanId = pageId.trim().replace(/-/g, "");
@@ -128,7 +128,7 @@ export default function CreatePage() {
           }
 
           await generateAndSavePage(cleanId);
-        } catch (error) {
+        } catch (_error) {
           setError("Unable to validate page after sign in. Please try again.");
           setLoading(false);
         }
