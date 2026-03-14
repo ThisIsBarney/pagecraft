@@ -54,7 +54,7 @@ export default function CreatePage() {
 
       // Page is valid, show success message
       console.log(`Valid ${data.type}: ${data.title}`);
-    } catch (validationError) {
+    } catch {
       setError("Unable to validate page. Please check your connection and try again.");
       setLoading(false);
       return;
@@ -84,7 +84,7 @@ export default function CreatePage() {
       }
 
       router.push(`/p/${slug}?template=${selectedTemplate}`);
-    } catch (_error) {
+    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       setError("Failed to save page. Please try again.");
       setLoading(false);
     }
@@ -107,7 +107,7 @@ export default function CreatePage() {
     }
   };
 
-  const handleAuthSuccess = async (_user: { id: string; email: string; name: string }) => {
+  const handleAuthSuccess = async (_user: { id: string; email: string; name: string }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
     // If user was trying to save a page, proceed with generation
     if (shouldSavePage && pageId) {
       const cleanId = pageId.trim().replace(/-/g, "");
@@ -128,7 +128,7 @@ export default function CreatePage() {
           }
 
           await generateAndSavePage(cleanId);
-        } catch (_error) {
+        } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
           setError("Unable to validate page after sign in. Please try again.");
           setLoading(false);
         }

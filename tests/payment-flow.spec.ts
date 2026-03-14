@@ -35,7 +35,7 @@ test.describe("Payment Flow", () => {
     // 真实支付测试需要手动完成
   });
 
-  test("verify payment updates user to pro", async ({ request }) => {
+  test("verify payment updates user to pro", () => {
     // 模拟支付成功后的验证
     // 这个测试需要真实的 Stripe session ID
     console.log("Payment verification test - requires manual Stripe test");

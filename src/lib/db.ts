@@ -28,7 +28,7 @@ const userPagesStore: Record<string, {
   title: string;
   slug: string;
   template: string;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   lastAccessedAt: string;
@@ -64,7 +64,7 @@ export interface UserPage {
   title: string;
   slug: string;
   template: string;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
   lastAccessedAt: string;

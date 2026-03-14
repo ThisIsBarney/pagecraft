@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     // Check if page already exists for this user
     const existingPages = await userPagesDb.getByUserId(user.id);
-    const existingPage = existingPages.find((p: any) => p.notionPageId === notionPageId);
+    const existingPage = existingPages.find((p) => p.notionPageId === notionPageId);
 
     if (existingPage) {
       // Update existing page

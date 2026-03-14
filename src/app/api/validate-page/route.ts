@@ -42,23 +42,31 @@ export async function GET(request: Request) {
     // Try to retrieve the page
     try {
       const page = await notion.pages.retrieve({ page_id: cleanPageId });
+      const pageData = page as unknown as {
+        properties?: { title?: { title?: Array<{ plain_text?: string }> } };
+        url?: string;
+      };
       return NextResponse.json({
         success: true,
         type: "page",
-        title: (page as any).properties?.title?.title?.[0]?.plain_text || "Untitled",
-        url: (page as any).url,
+        title: pageData.properties?.title?.title?.[0]?.plain_text || "Untitled",
+        url: pageData.url,
       });
-    } catch (pageError) {
+    } catch {
       // Not a page, try as database
       try {
         const database = await notion.databases.retrieve({ database_id: cleanPageId });
+        const databaseData = database as unknown as {
+          title?: Array<{ plain_text?: string }>;
+          url?: string;
+        };
         return NextResponse.json({
           success: true,
           type: "database",
-          title: (database as any).title?.[0]?.plain_text || "Untitled Database",
-          url: (database as any).url,
+          title: databaseData.title?.[0]?.plain_text || "Untitled Database",
+          url: databaseData.url,
         });
-      } catch (dbError) {
+      } catch {
         // Neither page nor database found
         return NextResponse.json({
           success: false,

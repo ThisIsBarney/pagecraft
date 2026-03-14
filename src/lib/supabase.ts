@@ -26,7 +26,7 @@ export interface UserPage {
   title: string
   custom_domain?: string
   template: string
-  settings: Record<string, any>
+  settings: Record<string, unknown>
   created_at: string
   updated_at: string
   last_accessed_at: string

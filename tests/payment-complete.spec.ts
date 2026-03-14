@@ -56,7 +56,7 @@ test.describe("Complete Payment Flow", () => {
     await page.waitForTimeout(3000);
   });
 
-  test("verify payment in dashboard", async ({ page }) => {
+  test("verify payment in dashboard", () => {
     // 这个测试需要登录 Stripe Dashboard 验证
     // 暂时跳过，需要手动验证
     test.skip(true, "Manual verification required in Stripe Dashboard");

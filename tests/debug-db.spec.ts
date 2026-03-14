@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 
 const BASE_URL = "https://pagecraft-eight.vercel.app";
 const TEST_DB_ID = "262bffda61bf80c8b116f6f1ec278d68";

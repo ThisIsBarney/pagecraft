@@ -23,9 +23,6 @@ describe('Supabase Integration', () => {
   // 只有在测试环境时才运行集成测试
   if (shouldRunIntegrationTests) {
     describe('Database Operations', () => {
-      let testUserId: string
-      let testPageId: string
-
       beforeAll(async () => {
         // 创建测试用户
         // 注意：在实际测试中，应该使用测试专用的 Supabase 项目
