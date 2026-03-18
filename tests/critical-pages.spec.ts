@@ -161,4 +161,29 @@ test.describe("API Endpoints", () => {
     // 应该返回 404（域名不存在）或 200
     expect([200, 404]).toContain(response.status());
   });
+
+  test("verify payment rejects missing session ID", async ({ request }) => {
+    const response = await request.post("/api/verify-payment", {
+      data: {},
+    });
+
+    expect(response.status()).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "Session ID required",
+    });
+  });
+
+  test("verify payment rejects empty JSON bodies", async ({ request }) => {
+    const response = await request.fetch("/api/verify-payment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    expect(response.status()).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "A JSON body with sessionId is required",
+    });
+  });
 });

@@ -3,10 +3,19 @@ import { stripe } from "@/lib/stripe";
 import { domainsDb, usersDb } from "@/lib/db";
 
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { sessionId } = body;
+  let sessionId: string | undefined;
 
+  try {
+    const body = (await request.json()) as { sessionId?: unknown };
+    sessionId = typeof body.sessionId === "string" ? body.sessionId : undefined;
+  } catch {
+    return NextResponse.json(
+      { error: "A JSON body with sessionId is required" },
+      { status: 400 }
+    );
+  }
+
+  try {
     if (!sessionId) {
       return NextResponse.json({ error: "Session ID required" }, { status: 400 });
     }
@@ -64,17 +73,6 @@ export async function POST(request: Request) {
           updatedAt: new Date().toISOString(),
         });
         console.log("New Pro user created:", customerEmail);
-      }
-    }
-
-    // 更新用户为 Pro
-    if (customerEmail) {
-      const user = await usersDb.getByEmail(customerEmail);
-      if (user) {
-        user.subscriptionStatus = 'active';
-        user.updatedAt = new Date().toISOString();
-        await usersDb.set(user.id, user);
-        console.log("User upgraded to Pro:", customerEmail);
       }
     }
 
