@@ -129,6 +129,8 @@ npm test
 npm run test:ui
 ```
 
+本地 Playwright 回归默认会启动 `http://127.0.0.1:3000` 的 Next 开发服务器；项目已在 `next.config.mjs` 中允许 `localhost` 和 `127.0.0.1` 作为开发时跨源访问来源。
+
 ## 商业模型
 
 ### 免费版
