@@ -39,6 +39,63 @@ test.describe("Critical Pages", () => {
     );
   });
 
+  test("create page accepts a full Notion URL", async ({ page }) => {
+    const expectedPageId = "1234567890abcdef1234567890abcdef";
+    const notionUrl = `https://www.notion.so/Marshall-WU-${expectedPageId}?pvs=4`;
+
+    await page.route("**/api/validate-page**", async (route) => {
+      const requestUrl = new URL(route.request().url());
+      expect(requestUrl.searchParams.get("pageId")).toBe(expectedPageId);
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          type: "page",
+          title: "Test Page",
+          url: notionUrl,
+        }),
+      });
+    });
+
+    await page.goto("/create");
+    await page.getByLabel("Notion page ID or URL").fill(notionUrl);
+    await expect(page.getByText(`Detected page ID: ${expectedPageId}`)).toBeVisible();
+    await page.getByRole("button", { name: /Generate Site/i }).click();
+
+    await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  });
+
+  test("create page accepts a hyphenated Notion URL", async ({ page }) => {
+    const hyphenatedPageId = "12345678-90ab-cdef-1234-567890abcdef";
+    const normalizedPageId = "1234567890abcdef1234567890abcdef";
+    const notionUrl = `https://www.notion.so/workspace/Test-Page-${hyphenatedPageId}?pvs=4`;
+
+    await page.route("**/api/validate-page**", async (route) => {
+      const requestUrl = new URL(route.request().url());
+      expect(requestUrl.searchParams.get("pageId")).toBe(normalizedPageId);
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          type: "page",
+          title: "Test Page",
+          url: notionUrl,
+        }),
+      });
+    });
+
+    await page.goto("/create");
+    await page.getByLabel("Notion page ID or URL").fill(notionUrl);
+    await expect(page.getByText(`Detected page ID: ${normalizedPageId}`)).toBeVisible();
+    await page.getByRole("button", { name: /Generate Site/i }).click();
+
+    await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  });
+
   test("examples page loads", async ({ page }) => {
     const response = await page.goto("/examples");
     expect(response?.status()).toBe(200);

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Client } from "@notionhq/client";
+import { extractNotionPageId } from "@/lib/notion-input";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -7,20 +8,18 @@ export async function GET(request: Request) {
 
   if (!pageId) {
     return NextResponse.json(
-      { success: false, error: "Page ID is required" },
+      { success: false, error: "A Notion page ID or URL is required" },
       { status: 400 }
     );
   }
 
-  // Clean the page ID (remove hyphens)
-  const cleanPageId = pageId.replace(/-/g, "");
+  const cleanPageId = extractNotionPageId(pageId);
 
-  // Validate format (should be 32 hex characters)
-  if (!/^[a-f0-9]{32}$/i.test(cleanPageId)) {
+  if (!cleanPageId) {
     return NextResponse.json(
       { 
         success: false, 
-        error: "Invalid Page ID format. Notion Page IDs should be 32 hexadecimal characters (with or without hyphens)." 
+        error: "Invalid Notion page identifier. Paste a 32-character page ID or a full Notion page URL." 
       },
       { status: 400 }
     );

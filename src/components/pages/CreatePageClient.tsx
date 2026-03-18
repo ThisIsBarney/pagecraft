@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthModal from "@/components/AuthModal";
 import { useAuth } from "@/hooks/useAuth";
+import { extractNotionPageId } from "@/lib/notion-input";
 
 const templates = [
   { id: "minimal", name: "Minimal", description: "Clean and simple", color: "bg-white" },
@@ -12,6 +13,8 @@ const templates = [
 ];
 
 export default function CreatePageClient() {
+  const pageIdFieldId = "notion-page-id";
+  const authorFieldId = "author-name";
   const [pageId, setPageId] = useState("");
   const [author, setAuthor] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("minimal");
@@ -21,22 +24,24 @@ export default function CreatePageClient() {
   const [shouldSavePage, setShouldSavePage] = useState(false);
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const normalizedPageId = extractNotionPageId(pageId);
+  const acceptsNotionUrl = pageId.trim() !== "" && normalizedPageId !== null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pageId.trim()) {
-      setError("Please enter a Notion Page ID");
+      setError("Please enter a Notion page ID or full Notion page URL");
       return;
     }
 
     setError("");
     setLoading(true);
 
-    const cleanId = pageId.trim().replace(/-/g, "");
-
-    // Validate format (32 hex characters)
-    if (!/^[a-f0-9]{32}$/i.test(cleanId)) {
-      setError("Invalid Page ID format. Notion Page IDs should be 32 hexadecimal characters (with or without hyphens). Example: 1a2b3c4d5e6f7g8h9i0j1234567890ab");
+    const cleanId = extractNotionPageId(pageId);
+    if (!cleanId) {
+      setError(
+        "Invalid Notion page identifier. Paste a 32-character page ID or a full Notion page URL."
+      );
       setLoading(false);
       return;
     }
@@ -114,10 +119,10 @@ export default function CreatePageClient() {
     console.log("Auth success for user:", user.email);
     // If user was trying to save a page, proceed with generation
     if (shouldSavePage && pageId) {
-      const cleanId = pageId.trim().replace(/-/g, "");
+      const cleanId = extractNotionPageId(pageId);
 
       // Re-validate before proceeding (in case of network issues)
-      if (cleanId.length === 32) {
+      if (cleanId) {
         setLoading(true);
 
         // Quick validation before proceeding
@@ -142,12 +147,12 @@ export default function CreatePageClient() {
   };
 
   const extractFromUrl = (url: string) => {
-    const match = url.match(/([a-f0-9]{32})/i);
-    if (match) {
-      setPageId(match[1]);
+    const extractedId = extractNotionPageId(url);
+    if (extractedId) {
+      setPageId(extractedId);
       setError("");
     } else {
-      setError("Could not find a valid Page ID in this URL");
+      setError("Could not find a valid Notion page ID in the pasted content");
     }
   };
 
@@ -165,7 +170,7 @@ export default function CreatePageClient() {
         <div className="bg-white rounded-2xl shadow-sm border p-8">
           <h1 className="text-2xl font-bold mb-2">Create your site</h1>
           <p className="text-gray-600 mb-8">
-            Choose a template and enter your Notion page ID.
+            Choose a template and enter your Notion page ID or paste the full page URL.
           </p>
 
           {error && (
@@ -210,20 +215,24 @@ export default function CreatePageClient() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Notion Page ID
+              <label
+                htmlFor={pageIdFieldId}
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Notion page ID or URL
               </label>
               <input
+                id={pageIdFieldId}
                 type="text"
                 value={pageId}
                 onChange={(e) => {
                   setPageId(e.target.value);
                   setError("");
                 }}
-                placeholder="e.g., 1a2b3c4d5e6f7g8h9i0j1234567890ab"
+                placeholder="e.g., 1a2b3c4d5e6f7g8h9i0j1234567890ab or https://www.notion.so/..."
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
               />
-              <div className="mt-2 flex gap-2 text-sm">
+              <div className="mt-2 flex items-center justify-between gap-3 text-sm">
                 <button
                   type="button"
                   onClick={() => {
@@ -233,14 +242,23 @@ export default function CreatePageClient() {
                 >
                   Paste from clipboard
                 </button>
+                <span className={`text-xs ${acceptsNotionUrl ? "text-emerald-600" : "text-gray-500"}`}>
+                  {acceptsNotionUrl
+                    ? `Detected page ID: ${normalizedPageId}`
+                    : "We accept either a raw page ID or a Notion share URL"}
+                </span>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor={authorFieldId}
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Your Name (optional)
               </label>
               <input
+                id={authorFieldId}
                 type="text"
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}

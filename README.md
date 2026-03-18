@@ -11,6 +11,12 @@ Notion → 精美个人主页生成器
 - 📊 **分析统计** - 页面访问量跟踪
 - 🚀 **快速部署** - 一键部署到 Vercel
 
+## Notion 输入说明
+
+- 创建站点时支持两种输入方式：直接粘贴 32 位 Notion Page ID，或粘贴完整的 Notion 页面分享链接
+- 系统会自动从 Notion URL 中提取页面 ID，兼容带连字符和不带连字符的页面标识
+- 在验证失败时，优先检查页面是否已分享给 PageCraft 使用的 Notion integration
+
 ## 技术栈
 
 - **前端**: Next.js 14, React, TypeScript, Tailwind CSS
@@ -148,4 +154,3 @@ npm run test:ui
 ## 路线图
 
 详见 [ROADMAP.md](./ROADMAP.md) 和 [ITERATION.md](./ITERATION.md)
-
