@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Client } from "@notionhq/client";
+import { extractNotionPageId } from "@/lib/notion-input";
 
 interface TestResult {
   success: boolean;
@@ -56,38 +57,49 @@ export async function GET(request: Request) {
 
   // 测试 2: 如果提供了 pageId，尝试获取
   if (pageId) {
-    const cleanId = pageId.replace(/-/g, "");
-    
-    // 尝试作为页面
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const page = await notion.pages.retrieve({ page_id: cleanId }) as any;
-      results.tests.page = {
-        success: true,
-        title: page.properties?.title?.title?.[0]?.plain_text || "Untitled",
-        url: page.url,
-      };
-    } catch (error) {
-      results.tests.page = {
-        success: false,
-        error: (error as Error).message,
-      };
-    }
+    const cleanId = extractNotionPageId(pageId);
 
-    // 尝试作为数据库
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const db = await notion.databases.retrieve({ database_id: cleanId }) as any;
-      results.tests.database = {
-        success: true,
-        title: db.title?.[0]?.plain_text || "Untitled Database",
-        url: db.url,
+    if (!cleanId) {
+      results.tests.page = {
+        success: false,
+        error: "Invalid Notion page identifier",
       };
-    } catch (error) {
       results.tests.database = {
         success: false,
-        error: (error as Error).message,
+        error: "Invalid Notion page identifier",
       };
+    } else {
+      // 尝试作为页面
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const page = await notion.pages.retrieve({ page_id: cleanId }) as any;
+        results.tests.page = {
+          success: true,
+          title: page.properties?.title?.title?.[0]?.plain_text || "Untitled",
+          url: page.url,
+        };
+      } catch (error) {
+        results.tests.page = {
+          success: false,
+          error: (error as Error).message,
+        };
+      }
+
+      // 尝试作为数据库
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db = await notion.databases.retrieve({ database_id: cleanId }) as any;
+        results.tests.database = {
+          success: true,
+          title: db.title?.[0]?.plain_text || "Untitled Database",
+          url: db.url,
+        };
+      } catch (error) {
+        results.tests.database = {
+          success: false,
+          error: (error as Error).message,
+        };
+      }
     }
   }
 

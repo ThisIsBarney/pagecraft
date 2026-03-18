@@ -149,11 +149,29 @@ test.describe("Critical Pages", () => {
 
 test.describe("API Endpoints", () => {
   test("debug API responds", async ({ request }) => {
-    const response = await request.get("/api/debug?pageId=test");
+    const response = await request.get("/api/debug");
     expect(response.status()).toBe(200);
     
     const data = await response.json();
     expect(data).toHaveProperty("notionTokenSet");
+  });
+
+  test("debug API flags invalid page IDs without calling Notion", async ({ request }) => {
+    const response = await request.get("/api/debug?pageId=test");
+    expect(response.status()).toBe(200);
+
+    await expect(response.json()).resolves.toMatchObject({
+      tests: {
+        page: {
+          success: false,
+          error: "Invalid Notion page identifier",
+        },
+        database: {
+          success: false,
+          error: "Invalid Notion page identifier",
+        },
+      },
+    });
   });
 
   test("domains API responds", async ({ request }) => {
