@@ -2,6 +2,29 @@
 
 import { useState } from "react";
 
+interface CheckoutResponse {
+  url?: string;
+  error?: string;
+}
+
+function getCheckoutUrl(value: unknown): string | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const response = value as CheckoutResponse;
+  return typeof response.url === "string" ? response.url : null;
+}
+
+function getCheckoutError(value: unknown): string {
+  if (!value || typeof value !== "object") {
+    return "Failed to create checkout";
+  }
+
+  const response = value as CheckoutResponse;
+  return typeof response.error === "string" ? response.error : "Failed to create checkout";
+}
+
 export default function DomainsPage() {
   const [domain, setDomain] = useState("");
   const [pageId, setPageId] = useState("");
@@ -26,21 +49,27 @@ export default function DomainsPage() {
         body: JSON.stringify({ domain: domain || undefined, pageId: pageId || undefined, template }),
       });
 
-      const data = await response.json();
+      const data: unknown = await response.json();
 
       if (!response.ok) {
         setResult({
           success: false,
-          error: data.error || "Failed to create checkout",
+          error: getCheckoutError(data),
         });
         return;
       }
 
       // 跳转到 Stripe 结账
-      if (data.url) {
-        window.location.href = data.url;
+      const checkoutUrl = getCheckoutUrl(data);
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
         return;
       }
+
+      setResult({
+        success: false,
+        error: "Checkout session created without a redirect URL",
+      });
     } catch {
       setResult({
         success: false,

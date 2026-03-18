@@ -3,10 +3,56 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+}
+
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (user: { id: string; email: string; name: string }) => void;
+  onSuccess: (user: AuthUser) => void;
+}
+
+interface AuthSuccessResponse {
+  user: AuthUser;
+}
+
+interface AuthErrorResponse {
+  error?: string;
+}
+
+function isAuthUser(value: unknown): value is AuthUser {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const user = value as Record<string, unknown>;
+
+  return (
+    typeof user.id === "string" &&
+    typeof user.email === "string" &&
+    typeof user.name === "string"
+  );
+}
+
+function isAuthSuccessResponse(value: unknown): value is AuthSuccessResponse {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const response = value as Record<string, unknown>;
+  return isAuthUser(response.user);
+}
+
+function getErrorMessage(value: unknown, fallback: string): string {
+  if (!value || typeof value !== "object") {
+    return fallback;
+  }
+
+  const response = value as AuthErrorResponse;
+  return typeof response.error === "string" ? response.error : fallback;
 }
 
 export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
@@ -31,10 +77,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         body: JSON.stringify({ email, name: mode === "register" ? name : undefined }),
       });
 
-      const data = await response.json();
+      const data: unknown = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Authentication failed");
+        throw new Error(getErrorMessage(data, "Authentication failed"));
+      }
+
+      if (!isAuthSuccessResponse(data)) {
+        throw new Error("Authentication response was invalid");
       }
 
       onSuccess(data.user);
