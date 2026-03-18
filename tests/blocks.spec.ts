@@ -6,9 +6,10 @@ test.describe("Block Rendering Tests", () => {
   const TEST_PAGE_ID = process.env.TEST_NOTION_PAGE_ID;
 
   test.beforeEach(async ({ page }) => {
-    if (!TEST_PAGE_ID || TEST_PAGE_ID === "test-page-id") {
-      test.skip("No TEST_NOTION_PAGE_ID provided");
-    }
+    test.skip(
+      !TEST_PAGE_ID || TEST_PAGE_ID === "test-page-id",
+      "No TEST_NOTION_PAGE_ID provided"
+    );
     await page.goto(`${BASE_URL}/p/${TEST_PAGE_ID}`);
     await page.waitForLoadState("networkidle");
   });

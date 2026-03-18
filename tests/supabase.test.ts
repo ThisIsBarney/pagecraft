@@ -1,10 +1,10 @@
-import { describe, test, expect, beforeAll, afterAll } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase'
 
 // 注意：这是一个集成测试，需要实际的 Supabase 连接
 // 在生产环境中，应该使用测试数据库或模拟
 
-describe('Supabase Integration', () => {
+test.describe('Supabase Integration', () => {
   // 跳过实际连接测试，除非配置了测试环境
   const shouldRunIntegrationTests = process.env.NEXT_PUBLIC_SUPABASE_URL && 
     process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://ptcnwrezcrjrgdeftcfm.supabase.co'
@@ -26,13 +26,13 @@ describe('Supabase Integration', () => {
 
   // 只有在测试环境时才运行集成测试
   if (shouldRunIntegrationTests) {
-    describe('Database Operations', () => {
-      beforeAll(async () => {
+    test.describe('Database Operations', () => {
+      test.beforeAll(async () => {
         // 创建测试用户
         // 注意：在实际测试中，应该使用测试专用的 Supabase 项目
       })
 
-      afterAll(async () => {
+      test.afterAll(async () => {
         // 清理测试数据
       })
 
@@ -57,7 +57,7 @@ describe('Supabase Integration', () => {
 })
 
 // 工具函数测试
-describe('Supabase Utility Functions', () => {
+test.describe('Supabase Utility Functions', () => {
   test('Type definitions are correct', () => {
     // 验证类型导出
     const mockUserProfile = {
