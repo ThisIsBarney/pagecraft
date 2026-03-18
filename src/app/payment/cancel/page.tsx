@@ -1,3 +1,14 @@
+import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Payment Cancelled",
+  description:
+    "Your PageCraft upgrade was cancelled before checkout completed. Return when you are ready.",
+  path: "/payment/cancel",
+  noIndex: true,
+});
+
 export default function PaymentCancelPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">

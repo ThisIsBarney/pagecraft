@@ -1,4 +1,28 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { siteMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = {
+  title: "Turn Notion Into Beautiful Websites | PageCraft",
+  description:
+    "Publish a polished site from Notion in minutes with templates, custom domains, analytics, and zero-code setup.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    ...siteMetadata.openGraph,
+    title: "Turn Notion Into Beautiful Websites | PageCraft",
+    description:
+      "Publish a polished site from Notion in minutes with templates, custom domains, analytics, and zero-code setup.",
+    url: "/",
+  },
+  twitter: {
+    ...siteMetadata.twitter,
+    title: "Turn Notion Into Beautiful Websites | PageCraft",
+    description:
+      "Publish a polished site from Notion in minutes with templates, custom domains, analytics, and zero-code setup.",
+  },
+};
 
 export default function Home() {
   return (

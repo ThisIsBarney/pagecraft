@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import { MinimalTemplate } from "@/components/templates/MinimalTemplate";
 import { DesignerTemplate } from "@/components/templates/DesignerTemplate";
 import { DeveloperTemplate } from "@/components/templates/DeveloperTemplate";
 import { DatabaseTemplate } from "@/components/templates/DatabaseTemplate";
 import { PageContent } from "@/lib/notion";
+import { buildPageMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Template Gallery",
+  description:
+    "Preview PageCraft templates for pages and databases before publishing your Notion content.",
+  path: "/examples",
+});
 
 const samplePageContent: PageContent = {
   title: "Marshall WU - Full Stack Developer",

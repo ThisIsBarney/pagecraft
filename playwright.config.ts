@@ -1,5 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const shouldUseLocalWebServer = !process.env.SKIP_WEBSERVER;
+const defaultBaseUrl = shouldUseLocalWebServer
+  ? "http://127.0.0.1:3000"
+  : "https://pagecraft-eight.vercel.app";
+
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: true,
@@ -8,7 +13,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   use: {
-    baseURL: process.env.TEST_BASE_URL || "https://pagecraft-eight.vercel.app",
+    baseURL: process.env.TEST_BASE_URL || defaultBaseUrl,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
@@ -19,11 +24,11 @@ export default defineConfig({
     },
   ],
   // 自动测试关键页面
-  webServer: process.env.SKIP_WEBSERVER
-    ? undefined
-    : {
+  webServer: shouldUseLocalWebServer
+    ? {
         command: "npm run dev",
         url: "http://localhost:3000",
         reuseExistingServer: !process.env.CI,
-      },
+      }
+    : undefined,
 });
