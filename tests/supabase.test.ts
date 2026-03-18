@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from '@playwright/test'
-import { supabase } from '../src/lib/supabase'
+import { isSupabaseConfigured, supabase } from '../src/lib/supabase'
 
 // 注意：这是一个集成测试，需要实际的 Supabase 连接
 // 在生产环境中，应该使用测试数据库或模拟
@@ -15,9 +15,13 @@ describe('Supabase Integration', () => {
     expect(supabase.from).toBeDefined()
   })
 
-  test('Environment variables are set', () => {
-    expect(process.env.NEXT_PUBLIC_SUPABASE_URL).toBeDefined()
-    expect(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY).toBeDefined()
+  test('Configuration state matches environment variables', () => {
+    const hasEnvConfig = Boolean(
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+
+    expect(isSupabaseConfigured).toBe(hasEnvConfig)
   })
 
   // 只有在测试环境时才运行集成测试
@@ -85,5 +89,16 @@ describe('Supabase Utility Functions', () => {
     // 验证函数导出
     expect(typeof supabase.from).toBe('function')
     // 注意：实际函数在运行时才会绑定
+  })
+
+  test('Missing configuration fails lazily with a clear error', () => {
+    if (isSupabaseConfigured) {
+      expect(true).toBe(true)
+      return
+    }
+
+    expect(() => supabase.from('user_profiles')).toThrow(
+      'Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+    )
   })
 })

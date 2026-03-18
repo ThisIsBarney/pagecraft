@@ -26,6 +26,18 @@ Notion → 精美个人主页生成器
 - Node.js >= 18.17.0 (推荐使用 LTS 版本)
 - npm 或 yarn
 
+### 版本检查
+项目包含 Node.js 版本检查脚本，在安装依赖时会自动运行：
+```bash
+# 手动检查 Node.js 版本
+npm run check:node
+
+# 或直接运行脚本
+node scripts/check-node-version.js
+```
+
+如果版本不符合要求，脚本会显示错误信息并指导如何升级。
+
 ### 环境变量
 
 复制 `.env.local.example` 到 `.env.local` 并填写：

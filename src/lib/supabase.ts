@@ -1,11 +1,53 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Supabase 配置
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ptcnwrezcrjrgdeftcfm.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_qCpLOoAeKlCu4fnT4piwsA_DArybjFi'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// 创建 Supabase 客户端
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+type SupabaseClient = ReturnType<typeof createClient>
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables. Please check your .env.local file.')
+  // 在开发环境中，我们可以继续但显示警告
+  // 在生产环境中，这应该是一个硬性错误
+}
+
+function createUnavailableSupabaseClient(): SupabaseClient {
+  const missingConfigError = () => {
+    throw new Error(
+      'Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+    )
+  }
+
+  const unavailableAuth = new Proxy(
+    {},
+    {
+      get() {
+        return missingConfigError
+      },
+    }
+  )
+
+  return new Proxy(
+    {},
+    {
+      get(_target, prop) {
+        if (prop === 'auth') {
+          return unavailableAuth
+        }
+
+        return missingConfigError
+      },
+    }
+  ) as SupabaseClient
+}
+
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
+
+// 创建 Supabase 客户端；缺失配置时保留可导入性，并在实际调用时提供明确错误
+export const supabase = isSupabaseConfigured
+  ? createClient(supabaseUrl!, supabaseAnonKey!)
+  : createUnavailableSupabaseClient()
 
 // 用户相关类型定义
 export interface UserProfile {

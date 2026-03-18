@@ -69,22 +69,25 @@ export default function CreatePage() {
     }
 
     // User is authenticated, proceed to generate and save
-    await generateAndSavePage(cleanId);
+    await generateAndSavePage(cleanId, { saveToAccount: true });
   };
 
-  const generateAndSavePage = async (cleanId: string) => {
+  const generateAndSavePage = async (
+    cleanId: string,
+    options: { saveToAccount?: boolean } = {}
+  ) => {
     try {
       const slug = author
         ? `${cleanId}-${author.toLowerCase().replace(/\s+/g, "-")}`
         : cleanId;
 
-      // If user wants to save the page, call API
-      if (shouldSavePage && user) {
+      if (options.saveToAccount) {
         await savePageToUser(cleanId, slug);
       }
 
       router.push(`/p/${slug}?template=${selectedTemplate}`);
-    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      console.error("Failed to save page:", error);
       setError("Failed to save page. Please try again.");
       setLoading(false);
     }
@@ -107,7 +110,8 @@ export default function CreatePage() {
     }
   };
 
-  const handleAuthSuccess = async (_user: { id: string; email: string; name: string }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+  const handleAuthSuccess = async (user: { id: string; email: string; name: string }) => {
+    console.log("Auth success for user:", user.email);
     // If user was trying to save a page, proceed with generation
     if (shouldSavePage && pageId) {
       const cleanId = pageId.trim().replace(/-/g, "");
@@ -127,8 +131,9 @@ export default function CreatePage() {
             return;
           }
 
-          await generateAndSavePage(cleanId);
-        } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+          await generateAndSavePage(cleanId, { saveToAccount: true });
+        } catch (error) {
+          console.error("Unable to validate page after sign in:", error);
           setError("Unable to validate page after sign in. Please try again.");
           setLoading(false);
         }

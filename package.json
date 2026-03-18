@@ -11,7 +11,9 @@
     "start": "next start",
     "lint": "next lint",
     "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "preinstall": "node scripts/check-node-version.js",
+    "check:node": "node scripts/check-node-version.js"
   },
   "dependencies": {
     "@notionhq/client": "^5.12.0",
