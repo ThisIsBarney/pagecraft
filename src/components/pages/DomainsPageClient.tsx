@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { extractNotionPageId } from "@/lib/notion-input";
 
 interface CheckoutResponse {
   url?: string;
@@ -25,7 +26,39 @@ function getCheckoutError(value: unknown): string {
   return typeof response.error === "string" ? response.error : "Failed to create checkout";
 }
 
+function normalizeDomainInput(value: string): string {
+  const trimmedValue = value.trim().toLowerCase();
+  if (!trimmedValue) {
+    return "";
+  }
+
+  const valueWithProtocol = /^[a-z]+:\/\//i.test(trimmedValue)
+    ? trimmedValue
+    : `https://${trimmedValue}`;
+
+  try {
+    const parsedUrl = new URL(valueWithProtocol);
+    return parsedUrl.hostname.replace(/\.$/, "");
+  } catch {
+    return trimmedValue
+      .replace(/^[a-z]+:\/\//i, "")
+      .replace(/\/.*$/, "")
+      .replace(/\.$/, "");
+  }
+}
+
+function isValidDomain(value: string): boolean {
+  if (!value) {
+    return true;
+  }
+
+  return /^(?=.{1,253}$)(?!-)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(value);
+}
+
 export default function DomainsPageClient() {
+  const domainFieldId = "custom-domain";
+  const pageIdFieldId = "notion-page-id";
+  const templateFieldId = "default-template";
   const [domain, setDomain] = useState("");
   const [pageId, setPageId] = useState("");
   const [template, setTemplate] = useState("minimal");
@@ -35,18 +68,43 @@ export default function DomainsPageClient() {
     message?: string;
     error?: string;
   } | null>(null);
+  const normalizedDomain = normalizeDomainInput(domain);
+  const normalizedPageId = extractNotionPageId(pageId);
+  const hasDomain = domain.trim() !== "";
+  const hasPageId = pageId.trim() !== "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setResult(null);
+
+    if (hasDomain && !isValidDomain(normalizedDomain)) {
+      setResult({
+        success: false,
+        error: "Enter a valid custom domain, for example `example.com`.",
+      });
+      return;
+    }
+
+    if (hasPageId && !normalizedPageId) {
+      setResult({
+        success: false,
+        error: "Enter a valid Notion page ID or paste a full Notion share URL.",
+      });
+      return;
+    }
+
+    setLoading(true);
 
     try {
       // 创建结账会话
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: domain || undefined, pageId: pageId || undefined, template }),
+        body: JSON.stringify({
+          domain: normalizedDomain || undefined,
+          pageId: normalizedPageId || undefined,
+          template,
+        }),
       });
 
       const data: unknown = await response.json();
@@ -126,44 +184,97 @@ export default function DomainsPageClient() {
             </div>
           )}
 
+          {(hasDomain || normalizedPageId) && (
+            <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-slate-700">
+              <div className="font-medium text-slate-900">Checkout summary</div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <div>
+                  <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Domain
+                  </div>
+                  <div className={hasDomain && !isValidDomain(normalizedDomain) ? "text-red-600" : ""}>
+                    {normalizedDomain || "Not provided"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Notion page
+                  </div>
+                  <div className={hasPageId && !normalizedPageId ? "text-red-600" : "font-mono text-xs"}>
+                    {normalizedPageId || (hasPageId ? "Invalid page reference" : "Not provided")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Template
+                  </div>
+                  <div className="capitalize">{template}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Domain - Optional */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor={domainFieldId} className="block text-sm font-medium text-gray-700 mb-2">
                 Your Domain <span className="text-gray-400 font-normal">(optional)</span>
               </label>
               <input
+                id={domainFieldId}
                 type="text"
                 value={domain}
-                onChange={(e) => setDomain(e.target.value)}
+                onChange={(e) => {
+                  setDomain(e.target.value);
+                  setResult(null);
+                }}
                 placeholder="e.g., example.com (leave empty to skip)"
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <p className="mt-2 text-sm text-gray-500">
                 You can add a custom domain later from your dashboard
               </p>
+              {hasDomain && (
+                <p className={`mt-2 text-xs ${isValidDomain(normalizedDomain) ? "text-emerald-600" : "text-red-600"}`}>
+                  {isValidDomain(normalizedDomain)
+                    ? `We'll use: ${normalizedDomain}`
+                    : "Enter a domain like example.com without spaces or invalid characters"}
+                </p>
+              )}
             </div>
 
             {/* Page ID - Optional */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor={pageIdFieldId} className="block text-sm font-medium text-gray-700 mb-2">
                 Notion Page ID <span className="text-gray-400 font-normal">(optional)</span>
               </label>
               <input
+                id={pageIdFieldId}
                 type="text"
                 value={pageId}
-                onChange={(e) => setPageId(e.target.value)}
+                onChange={(e) => {
+                  setPageId(e.target.value);
+                  setResult(null);
+                }}
                 placeholder="e.g., 1a2b3c4d5e6f7g8h9i0j1234567890ab"
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
               />
+              {hasPageId && (
+                <p className={`mt-2 text-xs ${normalizedPageId ? "text-emerald-600" : "text-red-600"}`}>
+                  {normalizedPageId
+                    ? `Detected page ID: ${normalizedPageId}`
+                    : "Paste a 32-character page ID or a full Notion share URL"}
+                </p>
+              )}
             </div>
 
             {/* Template */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor={templateFieldId} className="block text-sm font-medium text-gray-700 mb-2">
                 Default Template
               </label>
               <select
+                id={templateFieldId}
                 value={template}
                 onChange={(e) => setTemplate(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"

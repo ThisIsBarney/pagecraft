@@ -1,4 +1,5 @@
 import { Block, RichText } from "@/lib/notion";
+import { getNotionImageUrl } from "@/lib/notion-image";
 
 interface BlockRendererProps {
   block: Block;
@@ -152,10 +153,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       );
 
     case "image":
-      const imageUrl =
-        block.image?.type === "external"
-          ? block.image.external?.url
-          : block.image?.file?.url;
+      const imageUrl = getNotionImageUrl(block);
 
       if (!imageUrl) return null;
 

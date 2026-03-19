@@ -12,6 +12,64 @@ const templates = [
   { id: "developer", name: "Developer", description: "Code editor style", color: "bg-[#1e1e1e]" },
 ];
 
+type SubmissionStage = "idle" | "validating" | "awaiting-auth" | "saving";
+
+interface ValidationResult {
+  type: "page" | "database";
+  title: string;
+  pageId: string;
+}
+
+function getErrorTips(error: string) {
+  const normalizedError = error.toLowerCase();
+
+  if (normalizedError.includes("invalid notion page identifier")) {
+    return [
+      "Paste a full Notion share URL or the 32-character page ID.",
+      "If you copied a URL, make sure it includes the page identifier segment.",
+      "Remove extra spaces before submitting again.",
+    ];
+  }
+
+  if (
+    normalizedError.includes("not found") ||
+    normalizedError.includes("shared with the pagecraft integration")
+  ) {
+    return [
+      "Open the page in Notion and verify the URL points to the page you want.",
+      "Share the page or database with the PageCraft integration before retrying.",
+      "Make sure the content is accessible to the integration, not just your personal account.",
+    ];
+  }
+
+  if (normalizedError.includes("connection") || normalizedError.includes("later")) {
+    return [
+      "Check your internet connection and retry.",
+      "If the issue persists, wait a moment and try again.",
+      "If Notion is reachable but validation still fails, the workspace token may need attention.",
+    ];
+  }
+
+  return [
+    "Double-check the Notion page URL or page ID.",
+    "Confirm the content has been shared with the PageCraft integration.",
+    "Retry in a moment if Notion access was recently updated.",
+  ];
+}
+
+function getStageLabel(stage: SubmissionStage, isAuthenticated: boolean) {
+  switch (stage) {
+    case "validating":
+      return "Checking access to your Notion content";
+    case "awaiting-auth":
+      return "Page verified. Sign in to save it to your account";
+    case "saving":
+      return isAuthenticated ? "Saving your page settings and generating the site" : "Generating site";
+    default:
+      return "";
+  }
+}
+
 export default function CreatePageClient() {
   const pageIdFieldId = "notion-page-id";
   const authorFieldId = "author-name";
@@ -20,12 +78,15 @@ export default function CreatePageClient() {
   const [selectedTemplate, setSelectedTemplate] = useState("minimal");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [submissionStage, setSubmissionStage] = useState<SubmissionStage>("idle");
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [shouldSavePage, setShouldSavePage] = useState(false);
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const hasPageIdInput = pageId.trim() !== "";
   const normalizedPageId = extractNotionPageId(pageId);
-  const acceptsNotionUrl = pageId.trim() !== "" && normalizedPageId !== null;
+  const hasValidPageReference = hasPageIdInput && normalizedPageId !== null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +96,8 @@ export default function CreatePageClient() {
     }
 
     setError("");
+    setValidationResult(null);
+    setSubmissionStage("validating");
     setLoading(true);
 
     const cleanId = extractNotionPageId(pageId);
@@ -42,6 +105,7 @@ export default function CreatePageClient() {
       setError(
         "Invalid Notion page identifier. Paste a 32-character page ID or a full Notion page URL."
       );
+      setSubmissionStage("idle");
       setLoading(false);
       return;
     }
@@ -53,20 +117,26 @@ export default function CreatePageClient() {
 
       if (!response.ok || !data.success) {
         setError(data.error || "Failed to validate page. Please try again.");
+        setSubmissionStage("idle");
         setLoading(false);
         return;
       }
 
-      // Page is valid, show success message
-      console.log(`Valid ${data.type}: ${data.title}`);
+      setValidationResult({
+        type: data.type,
+        title: data.title,
+        pageId: cleanId,
+      });
     } catch {
       setError("Unable to validate page. Please check your connection and try again.");
+      setSubmissionStage("idle");
       setLoading(false);
       return;
     }
 
     // Check if user is authenticated
     if (!isAuthenticated) {
+      setSubmissionStage("awaiting-auth");
       setLoading(false);
       setShouldSavePage(true);
       setShowAuthModal(true);
@@ -82,6 +152,8 @@ export default function CreatePageClient() {
     options: { saveToAccount?: boolean } = {}
   ) => {
     try {
+      setSubmissionStage("saving");
+      setLoading(true);
       const slug = author
         ? `${cleanId}-${author.toLowerCase().replace(/\s+/g, "-")}`
         : cleanId;
@@ -94,6 +166,7 @@ export default function CreatePageClient() {
     } catch (error) {
       console.error("Failed to save page:", error);
       setError("Failed to save page. Please try again.");
+      setSubmissionStage("idle");
       setLoading(false);
     }
   };
@@ -123,6 +196,7 @@ export default function CreatePageClient() {
 
       // Re-validate before proceeding (in case of network issues)
       if (cleanId) {
+        setSubmissionStage("validating");
         setLoading(true);
 
         // Quick validation before proceeding
@@ -132,14 +206,21 @@ export default function CreatePageClient() {
 
           if (!response.ok || !data.success) {
             setError(data.error || "Page validation failed after sign in. Please try again.");
+            setSubmissionStage("idle");
             setLoading(false);
             return;
           }
 
+          setValidationResult({
+            type: data.type,
+            title: data.title,
+            pageId: cleanId,
+          });
           await generateAndSavePage(cleanId, { saveToAccount: true });
         } catch (error) {
           console.error("Unable to validate page after sign in:", error);
           setError("Unable to validate page after sign in. Please try again.");
+          setSubmissionStage("idle");
           setLoading(false);
         }
       }
@@ -155,6 +236,18 @@ export default function CreatePageClient() {
       setError("Could not find a valid Notion page ID in the pasted content");
     }
   };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      extractFromUrl(clipboardText);
+    } catch {
+      setError("Clipboard access was blocked. Paste the Notion URL or page ID manually.");
+    }
+  };
+
+  const stageLabel = getStageLabel(submissionStage, isAuthenticated);
+  const errorTips = error ? getErrorTips(error) : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -180,10 +273,50 @@ export default function CreatePageClient() {
               <div className="mt-3 pt-3 border-t border-red-200 text-xs text-red-600">
                 <div className="font-medium">Tips:</div>
                 <ul className="list-disc pl-4 mt-1 space-y-1">
-                  <li>Find the Page ID in your Notion page URL: <code className="bg-red-100 px-1 rounded">.../notion.so/workspace/<span className="font-bold">page-id-here</span></code></li>
-                  <li>Make sure the page is shared with the PageCraft integration</li>
-                  <li>The page must be accessible (not private to you only)</li>
+                  {errorTips.map((tip) => (
+                    <li key={tip}>{tip}</li>
+                  ))}
                 </ul>
+              </div>
+            </div>
+          )}
+
+          {(loading || submissionStage === "awaiting-auth" || validationResult) && (
+            <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-blue-950">
+              <div className="flex items-start gap-3">
+                <div
+                  className={`mt-0.5 h-2.5 w-2.5 rounded-full ${
+                    loading ? "animate-pulse bg-blue-500" : "bg-emerald-500"
+                  }`}
+                />
+                <div className="flex-1">
+                  <div className="font-medium">
+                    {loading ? stageLabel : validationResult ? "Ready to publish" : stageLabel}
+                  </div>
+                  <div className="mt-1 text-blue-800">
+                    {loading
+                      ? "PageCraft is validating your Notion content and preparing the site configuration."
+                      : validationResult
+                        ? `${validationResult.type === "database" ? "Database" : "Page"}: ${validationResult.title}`
+                        : "Continue to the next step to publish your site."}
+                  </div>
+                  {validationResult && (
+                    <div className="mt-3 grid gap-2 rounded-lg bg-white/80 p-3 text-xs text-slate-700 sm:grid-cols-3">
+                      <div>
+                        <div className="font-medium text-slate-900">Content</div>
+                        <div>{validationResult.type}</div>
+                      </div>
+                      <div>
+                        <div className="font-medium text-slate-900">Template</div>
+                        <div>{templates.find((template) => template.id === selectedTemplate)?.name}</div>
+                      </div>
+                      <div>
+                        <div className="font-medium text-slate-900">Page ID</div>
+                        <div className="font-mono">{validationResult.pageId}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -228,6 +361,8 @@ export default function CreatePageClient() {
                 onChange={(e) => {
                   setPageId(e.target.value);
                   setError("");
+                  setSubmissionStage("idle");
+                  setValidationResult(null);
                 }}
                 placeholder="e.g., 1a2b3c4d5e6f7g8h9i0j1234567890ab or https://www.notion.so/..."
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
@@ -235,19 +370,47 @@ export default function CreatePageClient() {
               <div className="mt-2 flex items-center justify-between gap-3 text-sm">
                 <button
                   type="button"
-                  onClick={() => {
-                    navigator.clipboard.readText().then(extractFromUrl);
-                  }}
+                  onClick={handlePasteFromClipboard}
                   className="text-blue-600 hover:underline"
                 >
                   Paste from clipboard
                 </button>
-                <span className={`text-xs ${acceptsNotionUrl ? "text-emerald-600" : "text-gray-500"}`}>
-                  {acceptsNotionUrl
+                <span
+                  className={`text-xs ${
+                    hasValidPageReference
+                      ? "text-emerald-600"
+                      : hasPageIdInput
+                        ? "text-red-600"
+                        : "text-gray-500"
+                  }`}
+                >
+                  {hasValidPageReference
                     ? `Detected page ID: ${normalizedPageId}`
-                    : "We accept either a raw page ID or a Notion share URL"}
+                    : hasPageIdInput
+                      ? "Paste a 32-character page ID or a full Notion share URL"
+                      : "We accept either a raw page ID or a Notion share URL"}
                 </span>
               </div>
+              {hasValidPageReference && (
+                <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/80 p-3 text-xs text-emerald-900">
+                  <div className="font-medium">Ready to validate</div>
+                  <div className="mt-1">
+                    PageCraft will check this Notion content before generating your site.
+                  </div>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <div>
+                      <div className="font-medium">Page ID</div>
+                      <div className="font-mono">{normalizedPageId}</div>
+                    </div>
+                    <div>
+                      <div className="font-medium">Template</div>
+                      <div>
+                        {templates.find((template) => template.id === selectedTemplate)?.name}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -323,6 +486,7 @@ export default function CreatePageClient() {
         onClose={() => {
           setShowAuthModal(false);
           setShouldSavePage(false);
+          setSubmissionStage("idle");
         }}
         onSuccess={handleAuthSuccess}
       />

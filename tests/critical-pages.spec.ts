@@ -96,6 +96,86 @@ test.describe("Critical Pages", () => {
     await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
   });
 
+  test("create page shows validation progress while checking Notion access", async ({ page }) => {
+    await page.route("**/api/validate-page**", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          type: "page",
+          title: "Progress Test Page",
+          url: "https://www.notion.so/progress-test",
+        }),
+      });
+    });
+
+    await page.goto("/create");
+    await page
+      .getByLabel("Notion page ID or URL")
+      .fill("1234567890abcdef1234567890abcdef");
+    await page.getByRole("button", { name: /Generate Site/i }).click();
+
+    await expect(
+      page.getByText("Checking access to your Notion content")
+    ).toBeVisible();
+    await expect(
+      page.getByText("PageCraft is validating your Notion content and preparing the site configuration.")
+    ).toBeVisible();
+  });
+
+  test("create page previews the normalized Notion page ID before submit", async ({ page }) => {
+    await page.goto("/create");
+    await page
+      .getByLabel("Notion page ID or URL")
+      .fill("https://www.notion.so/workspace/Test-Page-12345678-90ab-cdef-1234-567890abcdef");
+
+    await expect(
+      page.getByText("Detected page ID: 1234567890abcdef1234567890abcdef")
+    ).toBeVisible();
+    await expect(page.getByText("Ready to validate")).toBeVisible();
+    await expect(page.getByText("PageCraft will check this Notion content before generating your site.")).toBeVisible();
+    await expect(page.getByText("Page ID", { exact: true })).toBeVisible();
+  });
+
+  test("create page shows inline guidance for invalid Notion references before submit", async ({ page }) => {
+    await page.goto("/create");
+    await page.getByLabel("Notion page ID or URL").fill("notion page");
+
+    await expect(
+      page.getByText("Paste a 32-character page ID or a full Notion share URL")
+    ).toBeVisible();
+  });
+
+  test("create page surfaces actionable Notion sharing guidance on validation errors", async ({ page }) => {
+    await page.route("**/api/validate-page**", async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: false,
+          error:
+            "Page or database not found. Please check:\n1. The ID is correct\n2. The page/database is shared with the PageCraft integration\n3. You have access to this content in Notion",
+        }),
+      });
+    });
+
+    await page.goto("/create");
+    await page
+      .getByLabel("Notion page ID or URL")
+      .fill("1234567890abcdef1234567890abcdef");
+    await page.getByRole("button", { name: /Generate Site/i }).click();
+
+    await expect(page.getByText("Unable to create site")).toBeVisible();
+    await expect(
+      page.getByText("Share the page or database with the PageCraft integration before retrying.")
+    ).toBeVisible();
+    await expect(
+      page.getByText("Make sure the content is accessible to the integration, not just your personal account.")
+    ).toBeVisible();
+  });
+
   test("examples page loads", async ({ page }) => {
     const response = await page.goto("/examples");
     expect(response?.status()).toBe(200);
@@ -130,6 +210,62 @@ test.describe("Critical Pages", () => {
       "Upgrade to Pro | PageCraft",
       "Upgrade PageCraft to unlock custom domains, premium templates, analytics, and branding removal."
     );
+  });
+
+  test("domains page normalizes custom domain and Notion URL before checkout", async ({ page }) => {
+    await page.route("**/api/checkout", async (route) => {
+      const payload = route.request().postDataJSON() as {
+        domain?: string;
+        pageId?: string;
+        template?: string;
+      };
+
+      expect(payload.domain).toBe("portfolio.example.com");
+      expect(payload.pageId).toBe("1234567890abcdef1234567890abcdef");
+      expect(payload.template).toBe("minimal");
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          url: "/payment/cancel",
+        }),
+      });
+    });
+
+    await page.goto("/domains");
+    await page
+      .getByLabel(/Your Domain/i)
+      .fill("https://portfolio.example.com/projects?ref=pagecraft");
+    await page
+      .getByLabel(/Notion Page ID/i)
+      .fill("https://www.notion.so/workspace/Test-Page-12345678-90ab-cdef-1234-567890abcdef");
+
+    await expect(page.getByText("We'll use: portfolio.example.com")).toBeVisible();
+    await expect(
+      page.getByText("Detected page ID: 1234567890abcdef1234567890abcdef")
+    ).toBeVisible();
+    await page.getByRole("button", { name: /Upgrade to Pro/i }).click();
+
+    await page.waitForURL("**/payment/cancel");
+  });
+
+  test("domains page blocks invalid custom domains before checkout", async ({ page }) => {
+    let checkoutCalled = false;
+
+    await page.route("**/api/checkout", async (route) => {
+      checkoutCalled = true;
+      await route.abort();
+    });
+
+    await page.goto("/domains");
+    await page.getByLabel(/Your Domain/i).fill("invalid domain");
+    await page.getByRole("button", { name: /Upgrade to Pro/i }).click();
+
+    await expect(
+      page.getByText("Enter a valid custom domain, for example `example.com`.")
+    ).toBeVisible();
+    expect(checkoutCalled).toBe(false);
   });
 
   test("payment success page loads", async ({ page }) => {

@@ -16,6 +16,10 @@ Notion → 精美个人主页生成器
 - 创建站点时支持两种输入方式：直接粘贴 32 位 Notion Page ID，或粘贴完整的 Notion 页面分享链接
 - 系统会自动从 Notion URL 中提取页面 ID，兼容带连字符和不带连字符的页面标识
 - 在验证失败时，优先检查页面是否已分享给 PageCraft 使用的 Notion integration
+- 创建流程会显示验证进度、识别到的页面摘要，以及针对常见输入/权限问题的可执行提示
+- 在提交前会即时解析 Notion URL，预览标准化后的 Page ID 和当前模板，尽量减少无效提交
+- 升级到 Pro 时也支持直接粘贴完整 Notion URL，系统会在结账前自动规范化页面 ID 与自定义域名
+- 页面中的 Notion 文件图片会通过服务端刷新签名 URL，减少过期链接导致的图片失效
 
 ## 技术栈
 
@@ -129,7 +133,7 @@ npm test
 npm run test:ui
 ```
 
-本地 Playwright 回归默认会启动 `http://127.0.0.1:3000` 的 Next 开发服务器；项目已在 `next.config.mjs` 中允许 `localhost` 和 `127.0.0.1` 作为开发时跨源访问来源。
+本地 Playwright 回归默认会启动 `http://127.0.0.1:3000` 的 Next 开发服务器，并显式绑定 `127.0.0.1` 以兼容受限环境；项目已在 `next.config.mjs` 中允许 `localhost` 和 `127.0.0.1` 作为开发时跨源访问来源。
 
 ## 商业模型
 
