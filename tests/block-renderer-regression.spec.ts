@@ -6,6 +6,7 @@ test.describe("BlockRenderer regression", () => {
 
     await expect(page.getByText("Nested bullet insight").first()).toBeVisible();
     await expect(page.getByText("Nested numbered detail").first()).toBeVisible();
+    await expect(page.locator("blockquote").filter({ hasText: "Great products feel obvious in hindsight." }).first()).toBeVisible();
     await expect(page.getByText("Great products feel obvious in hindsight.").first()).toBeVisible();
     await expect(page.getByText("Shipping weekly keeps momentum high.").first()).toBeVisible();
     await expect(page.locator("pre code").filter({ hasText: "await ship(\"pagecraft\");" }).first()).toBeVisible();
