@@ -30,16 +30,38 @@ export default function DashboardPageClient() {
   const [savedPages, setSavedPages] = useState<SavedPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedPageId, setCopiedPageId] = useState<string | null>(null);
+  const [templateDrafts, setTemplateDrafts] = useState<Record<string, string>>({});
+  const [savingTemplatePageId, setSavingTemplatePageId] = useState<string | null>(null);
+
+  const fetchSavedPages = async () => {
+    try {
+      const pagesRes = await fetch("/api/user-pages");
+      if (pagesRes.ok) {
+        const pagesData = await pagesRes.json();
+        const pages = pagesData.pages || [];
+        setSavedPages(pages);
+        setTemplateDrafts((current) => {
+          const nextDrafts = { ...current };
+          for (const page of pages as SavedPage[]) {
+            if (!nextDrafts[page.id]) {
+              nextDrafts[page.id] = page.template || "minimal";
+            }
+          }
+          return nextDrafts;
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch saved pages:", err);
+    }
+  };
 
   useEffect(() => {
-    // 获取当前用户
     fetch("/api/auth")
       .then((res) => res.json())
       .then(async (data) => {
         if (data.user) {
           setUser(data.user);
 
-          // 获取用户的域名（通过邮箱关联）
           try {
             const domainsRes = await fetch(`/api/user-domains?email=${encodeURIComponent(data.user.email)}`);
             if (domainsRes.ok) {
@@ -50,15 +72,7 @@ export default function DashboardPageClient() {
             console.error("Failed to fetch domains:", err);
           }
 
-          try {
-            const pagesRes = await fetch("/api/user-pages");
-            if (pagesRes.ok) {
-              const pagesData = await pagesRes.json();
-              setSavedPages(pagesData.pages || []);
-            }
-          } catch (err) {
-            console.error("Failed to fetch saved pages:", err);
-          }
+          await fetchSavedPages();
         }
         setLoading(false);
       })
@@ -96,6 +110,34 @@ export default function DashboardPageClient() {
       setTimeout(() => setCopiedPageId((current) => (current === pageId ? null : current)), 2000);
     } catch (error) {
       console.error("Failed to copy publish URL:", error);
+    }
+  };
+
+  const savePageTemplate = async (savedPage: SavedPage) => {
+    const selectedTemplate = templateDrafts[savedPage.id] || savedPage.template || "minimal";
+    setSavingTemplatePageId(savedPage.id);
+
+    try {
+      const response = await fetch("/api/user-pages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notionPageId: savedPage.notionPageId,
+          title: savedPage.title,
+          slug: savedPage.slug,
+          template: selectedTemplate,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update page template");
+      }
+
+      await fetchSavedPages();
+    } catch (error) {
+      console.error("Failed to save page template:", error);
+    } finally {
+      setSavingTemplatePageId((current) => (current === savedPage.id ? null : current));
     }
   };
 
@@ -258,6 +300,31 @@ export default function DashboardPageClient() {
                         <div>
                           <div className="font-medium">{savedPage.title || "Untitled"}</div>
                           <div className="text-sm text-gray-500">Template: {savedPage.template || "minimal"}</div>
+                          <div className="mt-2 flex items-center gap-2">
+                            <select
+                              aria-label={`Template for ${savedPage.title || "Untitled"}`}
+                              value={templateDrafts[savedPage.id] || savedPage.template || "minimal"}
+                              onChange={(event) =>
+                                setTemplateDrafts((current) => ({
+                                  ...current,
+                                  [savedPage.id]: event.target.value,
+                                }))
+                              }
+                              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700"
+                            >
+                              <option value="minimal">Minimal</option>
+                              <option value="designer">Designer</option>
+                              <option value="developer">Developer</option>
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => savePageTemplate(savedPage)}
+                              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                              disabled={savingTemplatePageId === savedPage.id}
+                            >
+                              {savingTemplatePageId === savedPage.id ? "Saving..." : "Save template"}
+                            </button>
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <button

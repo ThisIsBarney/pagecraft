@@ -304,6 +304,8 @@ test.describe("Critical Pages", () => {
   });
 
   test("dashboard shows saved page preview and edit actions for authenticated users", async ({ page }) => {
+    let savePayloadTemplate = "";
+
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "clipboard", {
         configurable: true,
@@ -339,6 +341,17 @@ test.describe("Critical Pages", () => {
     });
 
     await page.route("**/api/user-pages", async (route) => {
+      if (route.request().method() === "POST") {
+        const payload = route.request().postDataJSON() as { template?: string };
+        savePayloadTemplate = payload.template || "";
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ success: true }),
+        });
+        return;
+      }
+
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -364,6 +377,11 @@ test.describe("Critical Pages", () => {
     const copyButton = page.getByRole("button", { name: "Copy URL" });
     await copyButton.click();
     await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+
+    await page.getByLabel("Template for Product Brief").selectOption("developer");
+    await page.getByRole("button", { name: "Save template" }).click();
+    await expect(page.getByRole("button", { name: "Saving..." })).toBeVisible();
+    await expect.poll(() => savePayloadTemplate).toBe("developer");
 
     const previewLink = page.getByRole("link", { name: "Preview" });
     await expect(previewLink).toHaveAttribute(
