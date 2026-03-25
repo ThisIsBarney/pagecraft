@@ -279,6 +279,70 @@ test.describe("Critical Pages", () => {
     await expect(structureCard.getByText("Linked page", { exact: true })).toBeVisible();
   });
 
+  test("create page saves validated notion title for authenticated users", async ({ page }) => {
+    let savedTitle = "";
+
+    await page.route("**/api/validate-page**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          type: "page",
+          title: "Roadmap Hub",
+        }),
+      });
+    });
+
+    await page.route("**/api/auth", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            user: {
+              id: "user_1",
+              email: "demo@example.com",
+              name: "Demo",
+              subscriptionStatus: "active",
+            },
+          }),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
+    await page.route("**/api/user-pages", async (route) => {
+      if (route.request().method() === "POST") {
+        const payload = route.request().postDataJSON() as { title?: string };
+        savedTitle = payload.title || "";
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ success: true }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ pages: [] }),
+      });
+    });
+
+    await page.goto("/create");
+    await expect(page.getByRole("button", { name: /Generate & Save/i })).toBeVisible();
+    await page
+      .getByLabel("Notion page ID or URL")
+      .fill("1234567890abcdef1234567890abcdef");
+    await page.getByRole("button", { name: /Generate & Save/i }).click();
+
+    await expect.poll(() => savedTitle).toBe("Roadmap Hub");
+  });
+
   test("examples page loads", async ({ page }) => {
     const response = await page.goto("/examples");
     expect(response?.status()).toBe(200);

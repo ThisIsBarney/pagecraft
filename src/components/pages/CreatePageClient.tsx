@@ -175,6 +175,7 @@ export default function CreatePageClient() {
     setLoading(true);
 
     const cleanId = extractNotionPageId(pageId);
+    let validatedTitle = "Untitled";
     if (!cleanId) {
       setError(
         "Invalid Notion page identifier. Paste a 32-character page ID or a full Notion page URL."
@@ -218,6 +219,7 @@ export default function CreatePageClient() {
         unsupportedBlockTypes: data.unsupportedBlockTypes || [],
         pageStructure: data.pageStructure || [],
       });
+      validatedTitle = data.title;
     } catch {
       setError("Unable to validate page. Please check your connection and try again.");
       setErrorCode("notion_unavailable");
@@ -236,12 +238,15 @@ export default function CreatePageClient() {
     }
 
     // User is authenticated, proceed to generate and save
-    await generateAndSavePage(cleanId, { saveToAccount: true });
+    await generateAndSavePage(cleanId, {
+      saveToAccount: true,
+      pageTitle: validatedTitle,
+    });
   };
 
   const generateAndSavePage = async (
     cleanId: string,
-    options: { saveToAccount?: boolean } = {}
+    options: { saveToAccount?: boolean; pageTitle?: string } = {}
   ) => {
     try {
       setSubmissionStage("saving");
@@ -249,9 +254,10 @@ export default function CreatePageClient() {
       const slug = author
         ? `${cleanId}-${author.toLowerCase().replace(/\s+/g, "-")}`
         : cleanId;
+      const resolvedPageTitle = options.pageTitle?.trim() || validationResult?.title?.trim() || "Untitled";
 
       if (options.saveToAccount) {
-        await savePageToUser(cleanId, slug);
+        await savePageToUser(cleanId, slug, resolvedPageTitle);
       }
 
       router.push(`/p/${slug}?template=${selectedTemplate}`);
@@ -264,13 +270,13 @@ export default function CreatePageClient() {
     }
   };
 
-  const savePageToUser = async (pageId: string, slug: string) => {
+  const savePageToUser = async (pageId: string, slug: string, pageTitle: string) => {
     const response = await fetch("/api/user-pages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         notionPageId: pageId,
-        title: `Page ${new Date().toLocaleDateString()}`,
+        title: pageTitle,
         slug,
         template: selectedTemplate,
       }),
@@ -325,7 +331,10 @@ export default function CreatePageClient() {
             unsupportedBlockTypes: data.unsupportedBlockTypes || [],
             pageStructure: data.pageStructure || [],
           });
-          await generateAndSavePage(cleanId, { saveToAccount: true });
+          await generateAndSavePage(cleanId, {
+            saveToAccount: true,
+            pageTitle: data.title,
+          });
         } catch (error) {
           console.error("Unable to validate page after sign in:", error);
           setError("Unable to validate page after sign in. Please try again.");
