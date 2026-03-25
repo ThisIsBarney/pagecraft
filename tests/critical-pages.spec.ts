@@ -370,6 +370,7 @@ test.describe("Critical Pages", () => {
   test("dashboard shows saved page preview and edit actions for authenticated users", async ({ page }) => {
     let savePayloadTemplate = "";
     let savePayloadSlug = "";
+    let savePayloadSettings: { navOrder?: number; hideFromNavigation?: boolean; isHome?: boolean } = {};
 
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "clipboard", {
@@ -407,9 +408,14 @@ test.describe("Critical Pages", () => {
 
     await page.route("**/api/user-pages", async (route) => {
       if (route.request().method() === "POST") {
-        const payload = route.request().postDataJSON() as { template?: string; slug?: string };
+        const payload = route.request().postDataJSON() as {
+          template?: string;
+          slug?: string;
+          settings?: { navOrder?: number; hideFromNavigation?: boolean; isHome?: boolean };
+        };
         savePayloadTemplate = payload.template || "";
         savePayloadSlug = payload.slug || "";
+        savePayloadSettings = payload.settings || {};
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -429,6 +435,11 @@ test.describe("Critical Pages", () => {
               title: "Product Brief",
               slug: "1234567890abcdef1234567890abcdef-product-brief",
               template: "designer",
+              settings: {
+                navOrder: 0,
+                hideFromNavigation: false,
+                isHome: false,
+              },
             },
           ],
         }),
@@ -447,6 +458,9 @@ test.describe("Critical Pages", () => {
     await page
       .getByLabel("Slug for Product Brief")
       .fill("1234567890abcdef1234567890abcdef-case-study");
+    await page.getByLabel("Navigation order for Product Brief").fill("3");
+    await page.getByLabel("Hide Product Brief from navigation").check();
+    await page.getByLabel("Set Product Brief as home page").check();
 
     await page.getByLabel("Template for Product Brief").selectOption("developer");
     const previewLink = page.getByRole("link", { name: "Preview" });
@@ -458,6 +472,9 @@ test.describe("Critical Pages", () => {
     await page.getByRole("button", { name: "Save changes" }).click();
     await expect.poll(() => savePayloadTemplate).toBe("developer");
     await expect.poll(() => savePayloadSlug).toBe("1234567890abcdef1234567890abcdef-case-study");
+    await expect.poll(() => savePayloadSettings.navOrder).toBe(3);
+    await expect.poll(() => savePayloadSettings.hideFromNavigation).toBe(true);
+    await expect.poll(() => savePayloadSettings.isHome).toBe(true);
 
     const editLink = page.getByRole("link", { name: "Edit in Notion" });
     await expect(editLink).toHaveAttribute(

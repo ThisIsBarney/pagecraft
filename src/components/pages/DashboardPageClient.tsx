@@ -16,12 +16,19 @@ interface Site {
   url: string;
 }
 
+interface PageStructureSettings {
+  navOrder?: number;
+  hideFromNavigation?: boolean;
+  isHome?: boolean;
+}
+
 interface SavedPage {
   id: string;
   title: string;
   slug: string;
   template: string;
   notionPageId: string;
+  settings?: PageStructureSettings;
 }
 
 export default function DashboardPageClient() {
@@ -32,6 +39,9 @@ export default function DashboardPageClient() {
   const [copiedPageId, setCopiedPageId] = useState<string | null>(null);
   const [templateDrafts, setTemplateDrafts] = useState<Record<string, string>>({});
   const [slugDrafts, setSlugDrafts] = useState<Record<string, string>>({});
+  const [navOrderDrafts, setNavOrderDrafts] = useState<Record<string, string>>({});
+  const [hiddenFromNavDrafts, setHiddenFromNavDrafts] = useState<Record<string, boolean>>({});
+  const [homeDraftPageId, setHomeDraftPageId] = useState<string | null>(null);
   const [savingTemplatePageId, setSavingTemplatePageId] = useState<string | null>(null);
 
   const fetchSavedPages = async () => {
@@ -58,6 +68,33 @@ export default function DashboardPageClient() {
             }
           }
           return nextDrafts;
+        });
+        setNavOrderDrafts((current) => {
+          const nextDrafts = { ...current };
+          for (const page of pages as SavedPage[]) {
+            if (nextDrafts[page.id] === undefined) {
+              const navOrder = page.settings?.navOrder;
+              nextDrafts[page.id] = typeof navOrder === "number" ? String(navOrder) : "0";
+            }
+          }
+          return nextDrafts;
+        });
+        setHiddenFromNavDrafts((current) => {
+          const nextDrafts = { ...current };
+          for (const page of pages as SavedPage[]) {
+            if (nextDrafts[page.id] === undefined) {
+              nextDrafts[page.id] = Boolean(page.settings?.hideFromNavigation);
+            }
+          }
+          return nextDrafts;
+        });
+        setHomeDraftPageId((current) => {
+          if (current && (pages as SavedPage[]).some((page) => page.id === current)) {
+            return current;
+          }
+
+          const homePage = (pages as SavedPage[]).find((page) => page.settings?.isHome);
+          return homePage?.id || null;
         });
       }
     } catch (err) {
@@ -126,6 +163,18 @@ export default function DashboardPageClient() {
   const savePageTemplate = async (savedPage: SavedPage) => {
     const selectedTemplate = templateDrafts[savedPage.id] || savedPage.template || "minimal";
     const selectedSlug = slugDrafts[savedPage.id] || savedPage.slug || savedPage.notionPageId;
+    const navOrderValue = Number.parseInt(navOrderDrafts[savedPage.id] || "", 10);
+    const navOrder = Number.isFinite(navOrderValue) ? Math.max(0, navOrderValue) : undefined;
+
+    const settings: PageStructureSettings = {
+      hideFromNavigation: Boolean(hiddenFromNavDrafts[savedPage.id]),
+      isHome: homeDraftPageId === savedPage.id,
+    };
+
+    if (typeof navOrder === "number") {
+      settings.navOrder = navOrder;
+    }
+
     setSavingTemplatePageId(savedPage.id);
 
     try {
@@ -137,6 +186,7 @@ export default function DashboardPageClient() {
           title: savedPage.title,
           slug: selectedSlug,
           template: selectedTemplate,
+          settings,
         }),
       });
 
@@ -207,6 +257,18 @@ export default function DashboardPageClient() {
   }
 
   const isPro = user.subscriptionStatus === "active";
+  const orderedSavedPages = [...savedPages].sort((a, b) => {
+    const left = Number.parseInt(navOrderDrafts[a.id] || "", 10);
+    const right = Number.parseInt(navOrderDrafts[b.id] || "", 10);
+    const leftOrder = Number.isFinite(left) ? left : Number.MAX_SAFE_INTEGER;
+    const rightOrder = Number.isFinite(right) ? right : Number.MAX_SAFE_INTEGER;
+
+    if (leftOrder === rightOrder) {
+      return (a.title || "").localeCompare(b.title || "");
+    }
+
+    return leftOrder - rightOrder;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -298,7 +360,7 @@ export default function DashboardPageClient() {
               <h2 className="text-xl font-bold mb-4">My Pages</h2>
               {savedPages.length > 0 ? (
                 <div className="space-y-4">
-                  {savedPages.map((savedPage) => {
+                  {orderedSavedPages.map((savedPage) => {
                     const pageSlug = slugDrafts[savedPage.id] || savedPage.slug || savedPage.notionPageId;
                     const currentTemplate =
                       templateDrafts[savedPage.id] || savedPage.template || "minimal";
@@ -348,6 +410,48 @@ export default function DashboardPageClient() {
                             >
                               {savingTemplatePageId === savedPage.id ? "Saving..." : "Save changes"}
                             </button>
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                            <label className="flex items-center gap-2">
+                              <span>Nav order</span>
+                              <input
+                                type="number"
+                                min={0}
+                                aria-label={`Navigation order for ${savedPage.title || "Untitled"}`}
+                                value={navOrderDrafts[savedPage.id] ?? "0"}
+                                onChange={(event) =>
+                                  setNavOrderDrafts((current) => ({
+                                    ...current,
+                                    [savedPage.id]: event.target.value,
+                                  }))
+                                }
+                                className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700"
+                              />
+                            </label>
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                aria-label={`Hide ${savedPage.title || "Untitled"} from navigation`}
+                                checked={Boolean(hiddenFromNavDrafts[savedPage.id])}
+                                onChange={(event) =>
+                                  setHiddenFromNavDrafts((current) => ({
+                                    ...current,
+                                    [savedPage.id]: event.target.checked,
+                                  }))
+                                }
+                              />
+                              <span>Hide from navigation</span>
+                            </label>
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="home-page-selection"
+                                aria-label={`Set ${savedPage.title || "Untitled"} as home page`}
+                                checked={homeDraftPageId === savedPage.id}
+                                onChange={() => setHomeDraftPageId(savedPage.id)}
+                              />
+                              <span>Home page</span>
+                            </label>
                           </div>
                         </div>
                         <div className="flex gap-2">

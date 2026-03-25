@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { buildNavigationItems } from "../src/lib/navigation";
+import { buildNavigationItems, buildSavedPageNavigationItems } from "../src/lib/navigation";
 import { toNotionEditUrl, type Block } from "../src/lib/notion";
 
 test.describe("Navigation builder", () => {
@@ -65,6 +65,77 @@ test.describe("Navigation builder", () => {
 
     expect(items).toHaveLength(2);
     expect(items[1]?.href).toBe("/p/1234567890abcdef1234567890abcdee");
+  });
+
+  test("builds navigation from saved page settings with home and ordering", () => {
+    const items = buildSavedPageNavigationItems(
+      [
+        {
+          id: "page_home",
+          notionPageId: "1234567890abcdef1234567890abcdef",
+          title: "Overview",
+          slug: "overview",
+          template: "minimal",
+          settings: {
+            navOrder: 2,
+            isHome: true,
+          },
+        },
+        {
+          id: "page_docs",
+          notionPageId: "1234567890abcdef1234567890abcdee",
+          title: "Docs",
+          slug: "docs",
+          template: "developer",
+          settings: {
+            navOrder: 1,
+          },
+        },
+      ],
+      {
+        slug: "docs",
+        pageId: "1234567890abcdef1234567890abcdee",
+      }
+    );
+
+    expect(items).toHaveLength(2);
+    expect(items[0]).toMatchObject({
+      title: "Home",
+      href: "/p/overview?template=minimal",
+      isCurrent: false,
+    });
+    expect(items[1]).toMatchObject({
+      title: "Docs",
+      href: "/p/docs?template=developer",
+      isCurrent: true,
+    });
+  });
+
+  test("omits saved pages hidden from navigation", () => {
+    const items = buildSavedPageNavigationItems(
+      [
+        {
+          id: "page_home",
+          notionPageId: "1234567890abcdef1234567890abcdef",
+          title: "Overview",
+          slug: "overview",
+          settings: { isHome: true },
+        },
+        {
+          id: "page_hidden",
+          notionPageId: "1234567890abcdef1234567890abcddd",
+          title: "Hidden",
+          slug: "hidden",
+          settings: { hideFromNavigation: true },
+        },
+      ],
+      {
+        slug: "overview",
+        pageId: "1234567890abcdef1234567890abcdef",
+      }
+    );
+
+    expect(items.map((item) => item.href)).toEqual(["/p/overview?template=minimal"]);
   });
 
   test("accepts notion url for edit shortcut", () => {

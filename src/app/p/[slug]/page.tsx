@@ -4,7 +4,8 @@ import { DesignerTemplate } from "@/components/templates/DesignerTemplate";
 import { DeveloperTemplate } from "@/components/templates/DeveloperTemplate";
 import { DatabaseTemplate } from "@/components/templates/DatabaseTemplate";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
-import { buildNavigationItems } from "@/lib/navigation";
+import { buildNavigationItems, buildSavedPageNavigationItems } from "@/lib/navigation";
+import { userPagesDb } from "@/lib/db";
 
 interface PageProps {
   params: {
@@ -44,7 +45,37 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
   try {
     const content = await getPublicPageContent(pageId);
-    const navigationItems = buildNavigationItems(content.blocks, pageId);
+    let navigationItems = buildNavigationItems(content.blocks, pageId);
+    const allSavedPages = Object.values(await userPagesDb.getAll());
+    const currentSavedPage = allSavedPages.find(
+      (savedPage) => savedPage.slug === params.slug || savedPage.notionPageId === pageId
+    );
+
+    if (currentSavedPage) {
+      const accountPages = await userPagesDb.getByUserId(currentSavedPage.userId);
+      const savedPageNavigation = buildSavedPageNavigationItems(
+        accountPages.map((page) => ({
+          id: page.id,
+          notionPageId: page.notionPageId,
+          title: page.title,
+          slug: page.slug,
+          template: page.template,
+          settings: page.settings as {
+            navOrder?: number;
+            hideFromNavigation?: boolean;
+            isHome?: boolean;
+          },
+        })),
+        {
+          slug: params.slug,
+          pageId,
+        }
+      );
+
+      if (savedPageNavigation.length > 0) {
+        navigationItems = savedPageNavigation;
+      }
+    }
     const notionEditUrl = toNotionEditUrl(content.sourceUrl);
 
     const pageNavigation = (

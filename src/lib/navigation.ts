@@ -7,12 +7,66 @@ export interface NavigationItem {
   isCurrent: boolean;
 }
 
+export interface SavedPageNavigationSettings {
+  navOrder?: number;
+  hideFromNavigation?: boolean;
+  isHome?: boolean;
+}
+
+export interface SavedPageNavigationEntry {
+  id: string;
+  notionPageId: string;
+  title: string;
+  slug: string;
+  template?: string;
+  settings?: SavedPageNavigationSettings;
+}
+
 function normalizePageId(pageId: string) {
   return pageId.replace(/-/g, "");
 }
 
 function toPagePath(pageId: string) {
   return `/p/${normalizePageId(pageId)}`;
+}
+
+export function buildSavedPageNavigationItems(
+  pages: SavedPageNavigationEntry[],
+  current: { slug: string; pageId: string }
+): NavigationItem[] {
+  const visiblePages = pages.filter((page) => !page.settings?.hideFromNavigation);
+  if (visiblePages.length === 0) {
+    return [];
+  }
+
+  const orderedPages = [...visiblePages].sort((left, right) => {
+    const leftOrder =
+      typeof left.settings?.navOrder === "number" ? left.settings.navOrder : Number.MAX_SAFE_INTEGER;
+    const rightOrder =
+      typeof right.settings?.navOrder === "number" ? right.settings.navOrder : Number.MAX_SAFE_INTEGER;
+
+    if (leftOrder === rightOrder) {
+      return (left.title || "").localeCompare(right.title || "");
+    }
+
+    return leftOrder - rightOrder;
+  });
+
+  const homePage = orderedPages.find((page) => page.settings?.isHome) ?? orderedPages[0];
+  const navigationPages = [homePage, ...orderedPages.filter((page) => page.id !== homePage.id)];
+  const normalizedCurrentPageId = normalizePageId(current.pageId);
+
+  return navigationPages.map((page) => {
+    const normalizedPageId = normalizePageId(page.notionPageId);
+    const pageSlug = page.slug || normalizedPageId;
+
+    return {
+      id: page.id,
+      title: page.id === homePage.id ? "Home" : page.title || "Untitled",
+      href: `/p/${pageSlug}?template=${page.template || "minimal"}`,
+      isCurrent: page.slug === current.slug || normalizedPageId === normalizedCurrentPageId,
+    };
+  });
 }
 
 export function buildNavigationItems(blocks: Block[] | undefined, currentPageId: string): NavigationItem[] {
