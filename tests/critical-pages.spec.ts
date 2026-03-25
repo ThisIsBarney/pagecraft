@@ -303,6 +303,68 @@ test.describe("Critical Pages", () => {
     ).toBeVisible();
   });
 
+  test("dashboard shows saved page preview and edit actions for authenticated users", async ({ page }) => {
+    await page.route("**/api/auth", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "user_1",
+            email: "demo@example.com",
+            name: "Demo",
+            subscriptionStatus: "active",
+          },
+        }),
+      });
+    });
+
+    await page.route("**/api/user-domains**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          domains: [],
+        }),
+      });
+    });
+
+    await page.route("**/api/user-pages", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          pages: [
+            {
+              id: "page_1",
+              notionPageId: "1234567890abcdef1234567890abcdef",
+              title: "Product Brief",
+              slug: "1234567890abcdef1234567890abcdef-product-brief",
+              template: "designer",
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto("/dashboard");
+
+    await expect(page.getByRole("heading", { name: "My Pages" })).toBeVisible();
+    await expect(page.getByText("Product Brief")).toBeVisible();
+
+    const previewLink = page.getByRole("link", { name: "Preview" });
+    await expect(previewLink).toHaveAttribute(
+      "href",
+      "/p/1234567890abcdef1234567890abcdef-product-brief?template=designer"
+    );
+
+    const editLink = page.getByRole("link", { name: "Edit in Notion" });
+    await expect(editLink).toHaveAttribute(
+      "href",
+      "https://www.notion.so/1234567890abcdef1234567890abcdef"
+    );
+  });
+
   test("domains page loads", async ({ page }) => {
     const response = await page.goto("/domains");
     expect(response?.status()).toBe(200);

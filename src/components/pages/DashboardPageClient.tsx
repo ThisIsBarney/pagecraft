@@ -16,9 +16,18 @@ interface Site {
   url: string;
 }
 
+interface SavedPage {
+  id: string;
+  title: string;
+  slug: string;
+  template: string;
+  notionPageId: string;
+}
+
 export default function DashboardPageClient() {
   const [user, setUser] = useState<User | null>(null);
   const [sites, setSites] = useState<Site[]>([]);
+  const [savedPages, setSavedPages] = useState<SavedPage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,6 +47,16 @@ export default function DashboardPageClient() {
             }
           } catch (err) {
             console.error("Failed to fetch domains:", err);
+          }
+
+          try {
+            const pagesRes = await fetch("/api/user-pages");
+            if (pagesRes.ok) {
+              const pagesData = await pagesRes.json();
+              setSavedPages(pagesData.pages || []);
+            }
+          } catch (err) {
+            console.error("Failed to fetch saved pages:", err);
           }
         }
         setLoading(false);
@@ -204,6 +223,52 @@ export default function DashboardPageClient() {
                     Create Site →
                   </a>
                 </div>
+              )}
+            </div>
+
+            {/* My Pages */}
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <h2 className="text-xl font-bold mb-4">My Pages</h2>
+              {savedPages.length > 0 ? (
+                <div className="space-y-4">
+                  {savedPages.map((savedPage) => {
+                    const pageSlug = savedPage.slug || savedPage.notionPageId;
+                    const previewUrl = `/p/${pageSlug}?template=${savedPage.template || "minimal"}`;
+                    const notionUrl = `https://www.notion.so/${savedPage.notionPageId}`;
+
+                    return (
+                      <div
+                        key={savedPage.id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 p-4"
+                      >
+                        <div>
+                          <div className="font-medium">{savedPage.title || "Untitled"}</div>
+                          <div className="text-sm text-gray-500">Template: {savedPage.template || "minimal"}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <a
+                            href={previewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white transition-colors hover:bg-black"
+                          >
+                            Preview
+                          </a>
+                          <a
+                            href={notionUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100"
+                          >
+                            Edit in Notion
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No saved pages yet. Publish from Create to manage them here.</p>
               )}
             </div>
           </div>
