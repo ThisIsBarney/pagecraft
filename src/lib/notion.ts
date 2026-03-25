@@ -49,14 +49,33 @@ export interface DatabaseInfo {
   id: string;
   title: string;
   description?: string;
+  url?: string;
 }
 
 export interface PageContent {
   title: string;
   blocks?: Block[];
   type: "page" | "database";
+  sourceUrl?: string;
   databaseInfo?: DatabaseInfo;
   databaseEntries?: DatabaseEntry[];
+}
+
+export function toNotionEditUrl(sourceUrl?: string): string | null {
+  if (!sourceUrl) {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(sourceUrl);
+    if (parsedUrl.hostname !== "www.notion.so" && parsedUrl.hostname !== "notion.so") {
+      return null;
+    }
+
+    return parsedUrl.toString();
+  } catch {
+    return null;
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -215,6 +234,7 @@ async function getDatabaseInfo(databaseId: string): Promise<DatabaseInfo> {
     id: databaseId,
     title: db.title?.[0]?.plain_text || "Untitled Database",
     description: db.description?.[0]?.plain_text || "",
+    url: db.url,
   };
 }
 
@@ -234,6 +254,7 @@ export async function getPageContent(pageId: string): Promise<PageContent> {
       title, 
       blocks,
       type: "page",
+      sourceUrl: page.url,
     };
   } catch (pageError) {
     // 不是页面，尝试作为数据库
@@ -245,6 +266,7 @@ export async function getPageContent(pageId: string): Promise<PageContent> {
         title: dbInfo.title,
         blocks: [],
         type: "database",
+        sourceUrl: dbInfo.url,
         databaseInfo: dbInfo,
         databaseEntries: entries,
       };

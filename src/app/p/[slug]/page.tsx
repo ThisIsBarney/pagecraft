@@ -1,4 +1,4 @@
-import { getPublicPageContent } from "@/lib/notion";
+import { getPublicPageContent, toNotionEditUrl } from "@/lib/notion";
 import { MinimalTemplate } from "@/components/templates/MinimalTemplate";
 import { DesignerTemplate } from "@/components/templates/DesignerTemplate";
 import { DeveloperTemplate } from "@/components/templates/DeveloperTemplate";
@@ -45,23 +45,36 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
   try {
     const content = await getPublicPageContent(pageId);
     const navigationItems = buildNavigationItems(content.blocks, pageId);
+    const notionEditUrl = toNotionEditUrl(content.sourceUrl);
 
     const pageNavigation = (
       <nav className="sticky top-0 z-30 border-b border-gray-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-2 overflow-x-auto px-4 py-3 sm:px-6">
-          {navigationItems.map((item) => (
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex flex-1 items-center gap-2 overflow-x-auto">
+            {navigationItems.map((item) => (
+              <a
+                key={item.id}
+                href={item.href}
+                className={`whitespace-nowrap rounded-full px-3 py-1 text-sm transition-colors ${
+                  item.isCurrent
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {item.title}
+              </a>
+            ))}
+          </div>
+          {notionEditUrl && (
             <a
-              key={item.id}
-              href={item.href}
-              className={`whitespace-nowrap rounded-full px-3 py-1 text-sm transition-colors ${
-                item.isCurrent
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              href={notionEditUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100"
             >
-              {item.title}
+              Edit in Notion ↗
             </a>
-          ))}
+          )}
         </div>
       </nav>
     );

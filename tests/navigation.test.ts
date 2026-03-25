@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { buildNavigationItems } from "../src/lib/navigation";
-import type { Block } from "../src/lib/notion";
+import { toNotionEditUrl, type Block } from "../src/lib/notion";
 
 test.describe("Navigation builder", () => {
   test("includes current page as highlighted home item", () => {
@@ -65,5 +65,17 @@ test.describe("Navigation builder", () => {
 
     expect(items).toHaveLength(2);
     expect(items[1]?.href).toBe("/p/1234567890abcdef1234567890abcdee");
+  });
+
+  test("accepts notion url for edit shortcut", () => {
+    expect(toNotionEditUrl("https://www.notion.so/workspace/Test-Page-1234567890abcdef")).toBe(
+      "https://www.notion.so/workspace/Test-Page-1234567890abcdef"
+    );
+  });
+
+  test("rejects non notion url for edit shortcut", () => {
+    expect(toNotionEditUrl("https://example.com/page")).toBeNull();
+    expect(toNotionEditUrl("not-a-url")).toBeNull();
+    expect(toNotionEditUrl(undefined)).toBeNull();
   });
 });
