@@ -160,6 +160,59 @@ export default function CreatePageClient() {
   const normalizedPageId = extractNotionPageId(pageId);
   const hasValidPageReference = hasPageIdInput && normalizedPageId !== null;
 
+  const validatePageAccess = async (
+    cleanId: string,
+    options: {
+      fallbackErrorMessage: string;
+      networkErrorMessage: string;
+    }
+  ): Promise<ValidationSuccessResponse | null> => {
+    setSubmissionStage("validating");
+    setLoading(true);
+
+    try {
+      const response = await fetch(`/api/validate-page?pageId=${cleanId}`);
+      const data: ValidationApiResponse = await response.json();
+
+      if (!response.ok) {
+        if (isValidationErrorResponse(data)) {
+          setError(data.error || options.fallbackErrorMessage);
+          setErrorCode(data.errorCode || null);
+        } else {
+          setError(options.fallbackErrorMessage);
+          setErrorCode(null);
+        }
+        setSubmissionStage("idle");
+        setLoading(false);
+        return null;
+      }
+
+      if (isValidationErrorResponse(data)) {
+        setError(data.error || options.fallbackErrorMessage);
+        setErrorCode(data.errorCode || null);
+        setSubmissionStage("idle");
+        setLoading(false);
+        return null;
+      }
+
+      setValidationResult({
+        type: data.type,
+        title: data.title,
+        pageId: cleanId,
+        unsupportedBlockTypes: data.unsupportedBlockTypes || [],
+        pageStructure: data.pageStructure || [],
+      });
+
+      return data;
+    } catch {
+      setError(options.networkErrorMessage);
+      setErrorCode("notion_unavailable");
+      setSubmissionStage("idle");
+      setLoading(false);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pageId.trim()) {
@@ -171,11 +224,8 @@ export default function CreatePageClient() {
     setError("");
     setErrorCode(null);
     setValidationResult(null);
-    setSubmissionStage("validating");
-    setLoading(true);
 
     const cleanId = extractNotionPageId(pageId);
-    let validatedTitle = "Untitled";
     if (!cleanId) {
       setError(
         "Invalid Notion page identifier. Paste a 32-character page ID or a full Notion page URL."
@@ -186,45 +236,11 @@ export default function CreatePageClient() {
       return;
     }
 
-    // Validate the page exists and is accessible
-    try {
-      const response = await fetch(`/api/validate-page?pageId=${cleanId}`);
-      const data: ValidationApiResponse = await response.json();
-
-      if (!response.ok) {
-        if (isValidationErrorResponse(data)) {
-          setError(data.error || "Failed to validate page. Please try again.");
-          setErrorCode(data.errorCode || null);
-        } else {
-          setError("Failed to validate page. Please try again.");
-          setErrorCode(null);
-        }
-        setSubmissionStage("idle");
-        setLoading(false);
-        return;
-      }
-
-      if (isValidationErrorResponse(data)) {
-        setError(data.error || "Failed to validate page. Please try again.");
-        setErrorCode(data.errorCode || null);
-        setSubmissionStage("idle");
-        setLoading(false);
-        return;
-      }
-
-      setValidationResult({
-        type: data.type,
-        title: data.title,
-        pageId: cleanId,
-        unsupportedBlockTypes: data.unsupportedBlockTypes || [],
-        pageStructure: data.pageStructure || [],
-      });
-      validatedTitle = data.title;
-    } catch {
-      setError("Unable to validate page. Please check your connection and try again.");
-      setErrorCode("notion_unavailable");
-      setSubmissionStage("idle");
-      setLoading(false);
+    const validationData = await validatePageAccess(cleanId, {
+      fallbackErrorMessage: "Failed to validate page. Please try again.",
+      networkErrorMessage: "Unable to validate page. Please check your connection and try again.",
+    });
+    if (!validationData) {
       return;
     }
 
@@ -240,7 +256,7 @@ export default function CreatePageClient() {
     // User is authenticated, proceed to generate and save
     await generateAndSavePage(cleanId, {
       saveToAccount: true,
-      pageTitle: validatedTitle,
+      pageTitle: validationData.title,
     });
   };
 
@@ -295,55 +311,46 @@ export default function CreatePageClient() {
 
       // Re-validate before proceeding (in case of network issues)
       if (cleanId) {
-        setSubmissionStage("validating");
-        setLoading(true);
-
-        // Quick validation before proceeding
-        try {
-          const response = await fetch(`/api/validate-page?pageId=${cleanId}`);
-          const data: ValidationApiResponse = await response.json();
-
-          if (!response.ok) {
-            if (isValidationErrorResponse(data)) {
-              setError(data.error || "Page validation failed after sign in. Please try again.");
-              setErrorCode(data.errorCode || null);
-            } else {
-              setError("Page validation failed after sign in. Please try again.");
-              setErrorCode(null);
-            }
-            setSubmissionStage("idle");
-            setLoading(false);
-            return;
-          }
-
-          if (isValidationErrorResponse(data)) {
-            setError(data.error || "Page validation failed after sign in. Please try again.");
-            setErrorCode(data.errorCode || null);
-            setSubmissionStage("idle");
-            setLoading(false);
-            return;
-          }
-
-          setValidationResult({
-            type: data.type,
-            title: data.title,
-            pageId: cleanId,
-            unsupportedBlockTypes: data.unsupportedBlockTypes || [],
-            pageStructure: data.pageStructure || [],
-          });
-          await generateAndSavePage(cleanId, {
-            saveToAccount: true,
-            pageTitle: data.title,
-          });
-        } catch (error) {
-          console.error("Unable to validate page after sign in:", error);
-          setError("Unable to validate page after sign in. Please try again.");
-          setErrorCode("notion_unavailable");
-          setSubmissionStage("idle");
-          setLoading(false);
+        const validationData = await validatePageAccess(cleanId, {
+          fallbackErrorMessage: "Page validation failed after sign in. Please try again.",
+          networkErrorMessage: "Unable to validate page after sign in. Please try again.",
+        });
+        if (!validationData) {
+          return;
         }
+
+        await generateAndSavePage(cleanId, {
+          saveToAccount: true,
+          pageTitle: validationData.title,
+        });
       }
     }
+  };
+
+  const handleRetryValidation = async () => {
+    if (loading) {
+      return;
+    }
+
+    const cleanId = extractNotionPageId(pageId) || validationResult?.pageId;
+    if (!cleanId) {
+      setError("Please enter a valid Notion page ID or URL before retrying.");
+      setErrorCode("invalid_identifier");
+      return;
+    }
+
+    setError("");
+    setErrorCode(null);
+    const validationData = await validatePageAccess(cleanId, {
+      fallbackErrorMessage: "Failed to validate page. Please try again.",
+      networkErrorMessage: "Unable to validate page. Please check your connection and try again.",
+    });
+    if (!validationData) {
+      return;
+    }
+
+    setSubmissionStage("idle");
+    setLoading(false);
   };
 
   const extractFromUrl = (url: string) => {
@@ -403,6 +410,26 @@ export default function CreatePageClient() {
                     <li key={tip}>{tip}</li>
                   ))}
                 </ul>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleRetryValidation}
+                    className="rounded-full border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                  >
+                    Retry validation
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError("");
+                      setErrorCode(null);
+                      setSubmissionStage("idle");
+                    }}
+                    className="text-xs font-medium text-red-700 underline"
+                  >
+                    Dismiss
+                  </button>
+                </div>
               </div>
             </div>
           )}

@@ -195,6 +195,53 @@ test.describe("Critical Pages", () => {
     ).toBeVisible();
   });
 
+  test("create page allows retry validation after an initial validation failure", async ({ page }) => {
+    let validationAttempts = 0;
+
+    await page.route("**/api/validate-page**", async (route) => {
+      validationAttempts += 1;
+
+      if (validationAttempts === 1) {
+        await route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({
+            success: false,
+            error: "Unable to validate page. Please try again later.",
+            errorCode: "notion_unavailable",
+          }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          type: "page",
+          title: "Retryable Page",
+          url: "https://www.notion.so/retryable-page",
+        }),
+      });
+    });
+
+    await page.goto("/create");
+    await page
+      .getByLabel("Notion page ID or URL")
+      .fill("1234567890abcdef1234567890abcdef");
+    await page.getByRole("button", { name: /Generate Site/i }).click();
+
+    await expect(page.getByText("Unable to create site")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Retry validation" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Retry validation" }).click();
+
+    await expect.poll(() => validationAttempts).toBe(2);
+    await expect(page.getByText("Ready to publish")).toBeVisible();
+    await expect(page.getByText("Page: Retryable Page")).toBeVisible();
+  });
+
   test("create page shows server misconfiguration guidance for structured error code", async ({ page }) => {
     await page.route("**/api/validate-page**", async (route) => {
       await route.fulfill({
