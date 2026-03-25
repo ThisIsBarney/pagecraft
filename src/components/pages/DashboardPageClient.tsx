@@ -29,6 +29,7 @@ export default function DashboardPageClient() {
   const [sites, setSites] = useState<Site[]>([]);
   const [savedPages, setSavedPages] = useState<SavedPage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copiedPageId, setCopiedPageId] = useState<string | null>(null);
 
   useEffect(() => {
     // 获取当前用户
@@ -82,6 +83,19 @@ export default function DashboardPageClient() {
 
       // 刷新页面获取域名
       window.location.reload();
+    }
+  };
+
+  const copyPublishUrl = async (pageId: string, slug: string, template: string) => {
+    const pageSlug = slug || pageId;
+    const publishUrl = `${window.location.origin}/p/${pageSlug}?template=${template || "minimal"}`;
+
+    try {
+      await navigator.clipboard.writeText(publishUrl);
+      setCopiedPageId(pageId);
+      setTimeout(() => setCopiedPageId((current) => (current === pageId ? null : current)), 2000);
+    } catch (error) {
+      console.error("Failed to copy publish URL:", error);
     }
   };
 
@@ -246,6 +260,13 @@ export default function DashboardPageClient() {
                           <div className="text-sm text-gray-500">Template: {savedPage.template || "minimal"}</div>
                         </div>
                         <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => copyPublishUrl(savedPage.id, pageSlug, savedPage.template)}
+                            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                          >
+                            {copiedPageId === savedPage.id ? "Copied" : "Copy URL"}
+                          </button>
                           <a
                             href={previewUrl}
                             target="_blank"

@@ -304,6 +304,15 @@ test.describe("Critical Pages", () => {
   });
 
   test("dashboard shows saved page preview and edit actions for authenticated users", async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async () => undefined,
+        },
+      });
+    });
+
     await page.route("**/api/auth", async (route) => {
       await route.fulfill({
         status: 200,
@@ -351,6 +360,10 @@ test.describe("Critical Pages", () => {
 
     await expect(page.getByRole("heading", { name: "My Pages" })).toBeVisible();
     await expect(page.getByText("Product Brief")).toBeVisible();
+
+    const copyButton = page.getByRole("button", { name: "Copy URL" });
+    await copyButton.click();
+    await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
 
     const previewLink = page.getByRole("link", { name: "Preview" });
     await expect(previewLink).toHaveAttribute(
