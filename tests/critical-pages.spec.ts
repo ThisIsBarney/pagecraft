@@ -537,6 +537,8 @@ test.describe("Critical Pages", () => {
     expect(response?.status()).toBe(200);
     
     await expect(page.getByRole("heading", { name: "Upgrade to Pro" })).toBeVisible();
+    await page.getByLabel(/Default Template/i).selectOption("creator");
+    await expect(page.getByLabel(/Default Template/i)).toHaveValue("creator");
     await expectMetadata(
       page,
       "Upgrade to Pro | PageCraft",
