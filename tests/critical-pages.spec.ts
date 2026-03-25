@@ -422,10 +422,13 @@ test.describe("Critical Pages", () => {
     let savePayloadSettings: { navOrder?: number; hideFromNavigation?: boolean; isHome?: boolean } = {};
 
     await page.addInitScript(() => {
+      (window as Window & { __copiedText?: string }).__copiedText = "";
       Object.defineProperty(navigator, "clipboard", {
         configurable: true,
         value: {
-          writeText: async () => undefined,
+          writeText: async (text: string) => {
+            (window as Window & { __copiedText?: string }).__copiedText = text;
+          },
         },
       });
     });
@@ -502,7 +505,10 @@ test.describe("Critical Pages", () => {
 
     const copyButton = page.getByRole("button", { name: "Copy URL" });
     await copyButton.click();
-    await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
+    await expect.poll(async () => {
+      const copiedText = await page.evaluate(() => (window as Window & { __copiedText?: string }).__copiedText || "");
+      return copiedText.endsWith("/p/1234567890abcdef1234567890abcdef-product-brief?template=designer");
+    }).toBe(true);
 
     await page
       .getByLabel("Slug for Product Brief")
@@ -571,7 +577,7 @@ test.describe("Critical Pages", () => {
       }
 
       pagesRequestCount += 1;
-      if (pagesRequestCount === 1) {
+      if (pagesRequestCount <= 2) {
         await route.fulfill({
           status: 500,
           contentType: "application/json",
@@ -602,7 +608,7 @@ test.describe("Critical Pages", () => {
 
     await page.getByRole("button", { name: "Retry loading pages" }).click();
 
-    await expect.poll(() => pagesRequestCount).toBeGreaterThanOrEqual(2);
+    await expect.poll(() => pagesRequestCount).toBeGreaterThanOrEqual(3);
     await expect(page.getByText("Recovered Page")).toBeVisible();
     await expect(page.getByText("Template: creator")).toBeVisible();
   });
