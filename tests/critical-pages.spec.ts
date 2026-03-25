@@ -139,6 +139,25 @@ test.describe("Critical Pages", () => {
     await expect(page.getByText("Page ID", { exact: true })).toBeVisible();
   });
 
+  test("create page previews expected publish URL as inputs change", async ({ page }) => {
+    await page.goto("/create");
+    await page
+      .getByLabel("Notion page ID or URL")
+      .fill("https://www.notion.so/workspace/Test-Page-12345678-90ab-cdef-1234-567890abcdef");
+
+    const publishPreviewCard = page.getByText("Publish URL preview", { exact: true }).locator("..");
+
+    await expect(page.getByText("Publish URL preview", { exact: true })).toBeVisible();
+    await expect(
+      publishPreviewCard.locator("div.mt-1.font-mono.break-all")
+    ).toHaveText("/p/1234567890abcdef1234567890abcdef?template=minimal");
+
+    await page.getByLabel("Your Name (optional)").fill("Marshall Wu");
+    await expect(
+      publishPreviewCard.locator("div.mt-1.font-mono.break-all")
+    ).toHaveText("/p/1234567890abcdef1234567890abcdef-marshall-wu?template=minimal");
+  });
+
   test("create page shows inline guidance for invalid Notion references before submit", async ({ page }) => {
     await page.goto("/create");
     await page.getByLabel("Notion page ID or URL").fill("notion page");
@@ -174,6 +193,58 @@ test.describe("Critical Pages", () => {
     await expect(
       page.getByText("Make sure the content is accessible to the integration, not just your personal account.")
     ).toBeVisible();
+  });
+
+  test("create page shows server misconfiguration guidance for structured error code", async ({ page }) => {
+    await page.route("**/api/validate-page**", async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: false,
+          error: "Server configuration error. Please contact support.",
+          errorCode: "server_misconfigured",
+        }),
+      });
+    });
+
+    await page.goto("/create");
+    await page
+      .getByLabel("Notion page ID or URL")
+      .fill("1234567890abcdef1234567890abcdef");
+    await page.getByRole("button", { name: /Generate Site/i }).click();
+
+    await expect(
+      page.getByText("The server is missing required Notion integration configuration.")
+    ).toBeVisible();
+  });
+
+  test("create page shows compatibility warning when unsupported blocks are detected", async ({ page }) => {
+    await page.route("**/api/validate-page**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          type: "page",
+          title: "Compatibility Demo",
+          hasUnsupportedBlocks: true,
+          unsupportedBlockTypes: ["column", "embed"],
+        }),
+      });
+    });
+
+    await page.goto("/create");
+    await page
+      .getByLabel("Notion page ID or URL")
+      .fill("1234567890abcdef1234567890abcdef");
+    await page.getByRole("button", { name: /Generate Site/i }).click();
+
+    await expect(page.getByText("Compatibility note")).toBeVisible();
+    await expect(
+      page.getByText("This page includes block types that currently use fallback rendering:")
+    ).toBeVisible();
+    await expect(page.getByText("column, embed")).toBeVisible();
   });
 
   test("examples page loads", async ({ page }) => {
@@ -284,6 +355,15 @@ test.describe("Critical Pages", () => {
 });
 
 test.describe("API Endpoints", () => {
+  test("validate-page reports structured error code for invalid identifiers", async ({ request }) => {
+    const response = await request.get("/api/validate-page?pageId=invalid-id");
+    expect(response.status()).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      errorCode: "invalid_identifier",
+    });
+  });
+
   test("debug API responds", async ({ request }) => {
     const response = await request.get("/api/debug");
     expect(response.status()).toBe(200);

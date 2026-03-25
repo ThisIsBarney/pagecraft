@@ -11,11 +11,11 @@ export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 py-6">
-        <div className="max-w-6xl mx-auto px-6">
+      <header className="bg-white border-b border-gray-200 py-4 sm:py-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">{author || "Collection"}</span>
-            <a href="/" className="text-xs text-gray-400 hover:text-gray-600">
+            <span className="text-xs sm:text-sm text-gray-500">{author || "Collection"}</span>
+            <a href="/" className="text-[11px] sm:text-xs text-gray-400 hover:text-gray-600">
               Made with PageCraft
             </a>
           </div>
@@ -23,22 +23,22 @@ export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-6 py-12">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Title Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">{title}</h1>
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 leading-tight">{title}</h1>
           {databaseInfo?.description && (
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto">
               {databaseInfo.description}
             </p>
           )}
-          <div className="mt-4 text-sm text-gray-500">
+          <div className="mt-4 text-xs sm:text-sm text-gray-500">
             {databaseEntries.length} items
           </div>
         </div>
 
         {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {databaseEntries.map((entry) => (
             <a
               key={entry.id}
@@ -65,8 +65,8 @@ export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
               ) : null}
 
               {/* Content */}
-              <div className="p-5 flex-1">
-                <h3 className="font-semibold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+              <div className="p-4 sm:p-5 flex-1">
+                <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors leading-snug">
                   {entry.icon && !entry.cover ? (
                     <span className="mr-2">{entry.icon}</span>
                   ) : null}
@@ -84,7 +84,7 @@ export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
                     })
                     .slice(0, 4) // 最多显示4个属性
                     .map(([key, value]) => (
-                      <div key={key} className="flex items-start gap-2 text-sm">
+                      <div key={key} className="flex items-start gap-2 text-xs sm:text-sm">
                         <span className="text-gray-400 shrink-0 text-xs uppercase tracking-wide">{key}</span>
                         <span className="text-gray-700 truncate">{value}</span>
                       </div>
@@ -97,7 +97,7 @@ export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
 
         {/* Empty State */}
         {databaseEntries.length === 0 && (
-          <div className="text-center py-20">
+          <div className="text-center py-14 sm:py-20">
             <div className="text-6xl mb-4">📭</div>
             <h3 className="text-xl font-medium text-gray-900 mb-2">No entries yet</h3>
             <p className="text-gray-600">
@@ -108,8 +108,8 @@ export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-8 mt-16">
-        <div className="max-w-6xl mx-auto px-6 text-center text-sm text-gray-400">
+      <footer className="bg-white border-t border-gray-200 py-6 sm:py-8 mt-12 sm:mt-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center text-xs sm:text-sm text-gray-400">
           © {new Date().getFullYear()} {author || "PageCraft User"}
         </div>
       </footer>

@@ -1,0 +1,28 @@
+import { expect, test } from "@playwright/test";
+
+test.describe("BlockRenderer regression", () => {
+  test("renders advanced block types on examples page", async ({ page }) => {
+    await page.goto("/examples");
+
+    const toggleSummary = page.locator("summary", { hasText: "Phase 2: Advanced blocks" }).first();
+    await expect(toggleSummary).toBeVisible();
+    await toggleSummary.click();
+    await expect(page.getByText("More details from toggle").first()).toBeVisible();
+    await expect(page.getByText("Cell A1").first()).toBeVisible();
+    await expect(page.getByText("Cell B1").first()).toBeVisible();
+    await expect(page.getByText("Synced block").first()).toBeVisible();
+    await expect(page.getByText("references another block").first()).toBeVisible();
+    await expect(page.getByText("Bookmark").first()).toBeVisible();
+    await expect(page.getByText("https://example.com/pagecraft-bookmark").first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open video" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Download file" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open PDF" }).first()).toBeVisible();
+  });
+
+  test("shows unsupported fallback for unknown block types", async ({ page }) => {
+    await page.goto("/examples");
+
+    await expect(page.getByText("Unsupported block:").first()).toBeVisible();
+    await expect(page.getByText("column").first()).toBeVisible();
+  });
+});

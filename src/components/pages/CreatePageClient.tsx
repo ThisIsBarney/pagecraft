@@ -13,14 +13,83 @@ const templates = [
 ];
 
 type SubmissionStage = "idle" | "validating" | "awaiting-auth" | "saving";
+type ValidationErrorCode =
+  | "missing_input"
+  | "invalid_identifier"
+  | "server_misconfigured"
+  | "notion_content_not_found"
+  | "notion_unavailable";
 
 interface ValidationResult {
   type: "page" | "database";
   title: string;
   pageId: string;
+  unsupportedBlockTypes?: string[];
 }
 
-function getErrorTips(error: string) {
+interface ValidationSuccessResponse {
+  success: true;
+  type: "page" | "database";
+  title: string;
+  url?: string;
+  hasUnsupportedBlocks?: boolean;
+  unsupportedBlockTypes?: string[];
+}
+
+interface ValidationErrorResponse {
+  success: false;
+  error: string;
+  errorCode?: ValidationErrorCode;
+}
+
+type ValidationApiResponse = ValidationSuccessResponse | ValidationErrorResponse;
+
+function isValidationErrorResponse(data: ValidationApiResponse): data is ValidationErrorResponse {
+  return data.success === false;
+}
+
+function buildExpectedSlug(pageId: string, author: string): string {
+  return author ? `${pageId}-${author.toLowerCase().replace(/\s+/g, "-")}` : pageId;
+}
+
+function buildExpectedPublishUrl(pageId: string, author: string, templateId: string): string {
+  const slug = buildExpectedSlug(pageId, author);
+  return `/p/${slug}?template=${templateId}`;
+}
+
+function getErrorTips(error: string, errorCode?: ValidationErrorCode | null) {
+  if (errorCode === "invalid_identifier") {
+    return [
+      "Paste a full Notion share URL or the 32-character page ID.",
+      "If you copied a URL, make sure it includes the page identifier segment.",
+      "Remove extra spaces before submitting again.",
+    ];
+  }
+
+  if (errorCode === "notion_content_not_found") {
+    return [
+      "Open the page in Notion and verify the URL points to the page you want.",
+      "Share the page or database with the PageCraft integration before retrying.",
+      "Make sure the content is accessible to the integration, not just your personal account.",
+    ];
+  }
+
+  if (errorCode === "notion_unavailable") {
+    return [
+      "Check your internet connection and retry.",
+      "If the issue persists, wait a moment and try again.",
+      "If Notion is reachable but validation still fails, the workspace token may need attention.",
+    ];
+  }
+
+  if (errorCode === "server_misconfigured") {
+    return [
+      "The server is missing required Notion integration configuration.",
+      "Retry later if deployment is in progress.",
+      "If this persists, contact support with the timestamp of your attempt.",
+    ];
+  }
+
   const normalizedError = error.toLowerCase();
 
   if (normalizedError.includes("invalid notion page identifier")) {
@@ -78,6 +147,7 @@ export default function CreatePageClient() {
   const [selectedTemplate, setSelectedTemplate] = useState("minimal");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState<ValidationErrorCode | null>(null);
   const [submissionStage, setSubmissionStage] = useState<SubmissionStage>("idle");
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -92,10 +162,12 @@ export default function CreatePageClient() {
     e.preventDefault();
     if (!pageId.trim()) {
       setError("Please enter a Notion page ID or full Notion page URL");
+      setErrorCode("missing_input");
       return;
     }
 
     setError("");
+    setErrorCode(null);
     setValidationResult(null);
     setSubmissionStage("validating");
     setLoading(true);
@@ -105,6 +177,7 @@ export default function CreatePageClient() {
       setError(
         "Invalid Notion page identifier. Paste a 32-character page ID or a full Notion page URL."
       );
+      setErrorCode("invalid_identifier");
       setSubmissionStage("idle");
       setLoading(false);
       return;
@@ -113,10 +186,24 @@ export default function CreatePageClient() {
     // Validate the page exists and is accessible
     try {
       const response = await fetch(`/api/validate-page?pageId=${cleanId}`);
-      const data = await response.json();
+      const data: ValidationApiResponse = await response.json();
 
-      if (!response.ok || !data.success) {
+      if (!response.ok) {
+        if (isValidationErrorResponse(data)) {
+          setError(data.error || "Failed to validate page. Please try again.");
+          setErrorCode(data.errorCode || null);
+        } else {
+          setError("Failed to validate page. Please try again.");
+          setErrorCode(null);
+        }
+        setSubmissionStage("idle");
+        setLoading(false);
+        return;
+      }
+
+      if (isValidationErrorResponse(data)) {
         setError(data.error || "Failed to validate page. Please try again.");
+        setErrorCode(data.errorCode || null);
         setSubmissionStage("idle");
         setLoading(false);
         return;
@@ -126,9 +213,11 @@ export default function CreatePageClient() {
         type: data.type,
         title: data.title,
         pageId: cleanId,
+        unsupportedBlockTypes: data.unsupportedBlockTypes || [],
       });
     } catch {
       setError("Unable to validate page. Please check your connection and try again.");
+      setErrorCode("notion_unavailable");
       setSubmissionStage("idle");
       setLoading(false);
       return;
@@ -166,6 +255,7 @@ export default function CreatePageClient() {
     } catch (error) {
       console.error("Failed to save page:", error);
       setError("Failed to save page. Please try again.");
+      setErrorCode(null);
       setSubmissionStage("idle");
       setLoading(false);
     }
@@ -202,10 +292,24 @@ export default function CreatePageClient() {
         // Quick validation before proceeding
         try {
           const response = await fetch(`/api/validate-page?pageId=${cleanId}`);
-          const data = await response.json();
+          const data: ValidationApiResponse = await response.json();
 
-          if (!response.ok || !data.success) {
+          if (!response.ok) {
+            if (isValidationErrorResponse(data)) {
+              setError(data.error || "Page validation failed after sign in. Please try again.");
+              setErrorCode(data.errorCode || null);
+            } else {
+              setError("Page validation failed after sign in. Please try again.");
+              setErrorCode(null);
+            }
+            setSubmissionStage("idle");
+            setLoading(false);
+            return;
+          }
+
+          if (isValidationErrorResponse(data)) {
             setError(data.error || "Page validation failed after sign in. Please try again.");
+            setErrorCode(data.errorCode || null);
             setSubmissionStage("idle");
             setLoading(false);
             return;
@@ -215,11 +319,13 @@ export default function CreatePageClient() {
             type: data.type,
             title: data.title,
             pageId: cleanId,
+            unsupportedBlockTypes: data.unsupportedBlockTypes || [],
           });
           await generateAndSavePage(cleanId, { saveToAccount: true });
         } catch (error) {
           console.error("Unable to validate page after sign in:", error);
           setError("Unable to validate page after sign in. Please try again.");
+          setErrorCode("notion_unavailable");
           setSubmissionStage("idle");
           setLoading(false);
         }
@@ -232,8 +338,10 @@ export default function CreatePageClient() {
     if (extractedId) {
       setPageId(extractedId);
       setError("");
+      setErrorCode(null);
     } else {
       setError("Could not find a valid Notion page ID in the pasted content");
+      setErrorCode("invalid_identifier");
     }
   };
 
@@ -243,11 +351,16 @@ export default function CreatePageClient() {
       extractFromUrl(clipboardText);
     } catch {
       setError("Clipboard access was blocked. Paste the Notion URL or page ID manually.");
+      setErrorCode(null);
     }
   };
 
   const stageLabel = getStageLabel(submissionStage, isAuthenticated);
-  const errorTips = error ? getErrorTips(error) : [];
+  const errorTips = error ? getErrorTips(error, errorCode) : [];
+  const previewPageId = normalizedPageId || validationResult?.pageId || "";
+  const expectedPublishUrl = previewPageId
+    ? buildExpectedPublishUrl(previewPageId, author, selectedTemplate)
+    : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -316,6 +429,18 @@ export default function CreatePageClient() {
                       </div>
                     </div>
                   )}
+                  {validationResult?.unsupportedBlockTypes &&
+                    validationResult.unsupportedBlockTypes.length > 0 && (
+                      <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                        <div className="font-medium">Compatibility note</div>
+                        <div className="mt-1">
+                          This page includes block types that currently use fallback rendering: {" "}
+                          <span className="font-mono">
+                            {validationResult.unsupportedBlockTypes.join(", ")}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
@@ -361,6 +486,7 @@ export default function CreatePageClient() {
                 onChange={(e) => {
                   setPageId(e.target.value);
                   setError("");
+                  setErrorCode(null);
                   setSubmissionStage("idle");
                   setValidationResult(null);
                 }}
@@ -409,6 +535,12 @@ export default function CreatePageClient() {
                       </div>
                     </div>
                   </div>
+                  {expectedPublishUrl && (
+                    <div className="mt-3 border-t border-emerald-100 pt-2">
+                      <div className="font-medium">Expected URL</div>
+                      <div className="font-mono text-[11px] sm:text-xs break-all">{expectedPublishUrl}</div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -429,6 +561,13 @@ export default function CreatePageClient() {
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
+
+            {expectedPublishUrl && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs sm:text-sm text-gray-700">
+                <div className="font-medium text-gray-900">Publish URL preview</div>
+                <div className="mt-1 font-mono break-all">{expectedPublishUrl}</div>
+              </div>
+            )}
 
             {/* Auth Status */}
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">

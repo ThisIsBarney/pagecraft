@@ -37,6 +37,8 @@
 5. 升级页会在结账前标准化自定义域名和 Notion URL，并在前端拦截明显无效的输入。
 6. 创建页会在提交前即时解析并预览 Notion Page ID；Playwright 本地回归显式绑定 `127.0.0.1`，兼容受限执行环境。
 7. 公共页面中的 Notion 文件图片现在通过服务端按 block ID 刷新签名 URL，降低图片链接过期后的渲染失败概率。
+8. Notion 高频块渲染已扩展到 `toggle/table/synced block/bookmark/video/file/pdf`，并统一未知块 fallback 为可识别提示。
+9. 新增 `tests/block-renderer-regression.spec.ts`，基于 `/examples` 页面验证高级块渲染与 fallback 行为，避免回归。
 
 ## Supabase 集成完成项
 ✅ 安装 @supabase/supabase-js 依赖

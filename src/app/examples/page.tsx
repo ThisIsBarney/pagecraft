@@ -76,6 +76,86 @@ const samplePageContent: PageContent = {
         ],
       },
     },
+    {
+      id: "8",
+      type: "toggle",
+      toggle: {
+        rich_text: [{ type: "text", text: { content: "Phase 2: Advanced blocks" } }],
+      },
+      children: [
+        {
+          id: "8-1",
+          type: "paragraph",
+          paragraph: {
+            rich_text: [{ type: "text", text: { content: "More details from toggle" } }],
+          },
+        },
+      ],
+    },
+    {
+      id: "9",
+      type: "table",
+      children: [
+        {
+          id: "9-1",
+          type: "table_row",
+          table_row: {
+            cells: [
+              [{ type: "text", text: { content: "Cell A1" } }],
+              [{ type: "text", text: { content: "Cell B1" } }],
+            ],
+          },
+        },
+      ],
+    },
+    {
+      id: "10",
+      type: "synced_block",
+      synced_block: {
+        synced_from: {
+          block_id: "demo-sync-origin",
+        },
+      },
+      children: [],
+    },
+    {
+      id: "11",
+      type: "bookmark",
+      bookmark: {
+        url: "https://example.com/pagecraft-bookmark",
+      },
+    },
+    {
+      id: "12",
+      type: "video",
+      video: {
+        external: {
+          url: "https://example.com/video/pagecraft-demo",
+        },
+      },
+    },
+    {
+      id: "13",
+      type: "file",
+      file: {
+        external: {
+          url: "https://example.com/files/pagecraft-spec.zip",
+        },
+      },
+    },
+    {
+      id: "14",
+      type: "pdf",
+      pdf: {
+        external: {
+          url: "https://example.com/files/pagecraft-guide.pdf",
+        },
+      },
+    },
+    {
+      id: "15",
+      type: "column",
+    },
   ],
 };
 

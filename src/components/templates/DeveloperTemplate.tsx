@@ -11,20 +11,20 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
     <div className="min-h-screen bg-[#1e1e1e] text-[#d4d4d4] font-mono">
       {/* Header */}
       <header className="bg-[#252526] border-b border-[#3e3e42]">
-        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center gap-2">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-2">
           <div className="flex gap-1.5">
             <span className="w-3 h-3 rounded-full bg-[#ff5f56]" />
             <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
             <span className="w-3 h-3 rounded-full bg-[#27ca40]" />
           </div>
-          <span className="ml-4 text-sm text-[#858585]">
+          <span className="ml-2 sm:ml-4 text-xs sm:text-sm text-[#858585] truncate">
             {content.title} — {author || "developer"}
           </span>
         </div>
       </header>
 
       {/* Sidebar + Main */}
-      <div className="max-w-4xl mx-auto flex">
+      <div className="max-w-4xl mx-auto flex flex-col md:flex-row">
         {/* Sidebar */}
         <aside className="hidden md:block w-64 border-r border-[#3e3e42] min-h-[calc(100vh-49px)] p-4">
           <div className="text-xs text-[#858585] uppercase tracking-wider mb-3">Explorer</div>
@@ -53,9 +53,9 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 sm:p-8">
           <div className="mb-8">
-            <div className="flex items-center gap-2 text-xs text-[#858585] mb-4">
+            <div className="flex items-center gap-2 text-[11px] sm:text-xs text-[#858585] mb-4 overflow-x-auto">
               <span>src</span>
               <span>/</span>
               <span>content</span>
@@ -69,7 +69,7 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
           </article>
 
           {/* Terminal-style footer */}
-          <div className="mt-16 p-4 bg-[#252526] rounded-lg border border-[#3e3e42]">
+          <div className="mt-12 sm:mt-16 p-4 bg-[#252526] rounded-lg border border-[#3e3e42]">
             <div className="flex items-center gap-2 text-xs text-[#858585] mb-2">
               <span className="text-[#27ca40]">➜</span>
               <span>~</span>
@@ -85,13 +85,13 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
       </div>
 
       {/* Status Bar */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-[#007acc] text-white text-xs py-1 px-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      <footer className="sticky bottom-0 left-0 right-0 bg-[#007acc] text-white text-[11px] sm:text-xs py-1 px-3 sm:px-4">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-1 sm:gap-0 items-start sm:items-center justify-between">
           <div className="flex items-center gap-4">
             <span>🌿 main</span>
             <span>0 errors, 0 warnings</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
             <span>Ln 1, Col 1</span>
             <span>UTF-8</span>
             <span>Markdown</span>
@@ -99,9 +99,6 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
           </div>
         </div>
       </footer>
-
-      {/* Spacer for fixed footer */}
-      <div className="h-6" />
     </div>
   );
 }

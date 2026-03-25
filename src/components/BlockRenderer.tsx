@@ -5,6 +5,28 @@ interface BlockRendererProps {
   block: Block;
 }
 
+function renderUnsupportedBlock(type: string) {
+  return (
+    <div className="my-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+      Unsupported block: <span className="font-mono">{type}</span>
+    </div>
+  );
+}
+
+function getBlockFileUrl(
+  fileBlock: { external?: { url?: string }; file?: { url?: string } } | undefined
+) {
+  return fileBlock?.external?.url || fileBlock?.file?.url || null;
+}
+
+function renderBlockCaption(caption: RichText[] | undefined) {
+  if (!caption || caption.length === 0) {
+    return null;
+  }
+
+  return <figcaption className="mt-2 text-center text-sm text-gray-500">{renderRichText(caption)}</figcaption>;
+}
+
 // 渲染富文本
 function renderRichText(richTexts: RichText[]) {
   return richTexts.map((text, i) => {
@@ -152,6 +174,156 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         </pre>
       );
 
+    case "toggle":
+      return (
+        <details className="my-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+          <summary className="cursor-pointer font-medium text-gray-900">
+            {renderRichText(block.toggle?.rich_text || [])}
+          </summary>
+          {block.children?.length > 0 && (
+            <div className="mt-3 space-y-2 pl-2">
+              {block.children.map((child: Block) => (
+                <BlockRenderer key={child.id} block={child} />
+              ))}
+            </div>
+          )}
+        </details>
+      );
+
+    case "table":
+      return (
+        <div className="my-6 overflow-x-auto rounded-lg border border-gray-200">
+          <table className="min-w-full border-collapse text-left text-sm">
+            <tbody>
+              {(block.children || []).map((row: Block) => {
+                if (row.type !== "table_row") {
+                  return null;
+                }
+
+                return (
+                  <tr key={row.id} className="border-b border-gray-100 last:border-b-0">
+                    {(row.table_row?.cells || []).map((cell: RichText[], index: number) => (
+                      <td key={`${row.id}-${index}`} className="px-3 py-2 align-top text-gray-800">
+                        {cell.length > 0 ? renderRichText(cell) : <span>&nbsp;</span>}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      );
+
+    case "synced_block":
+      return (
+        <div className="my-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Synced block</div>
+          {block.children?.length > 0 ? (
+            <div className="mt-2 space-y-2">
+              {block.children.map((child: Block) => (
+                <BlockRenderer key={child.id} block={child} />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-2 text-sm text-slate-600">
+              {block.synced_block?.synced_from?.block_id
+                ? "This synced content references another block."
+                : "No synced content available."}
+            </div>
+          )}
+        </div>
+      );
+
+    case "bookmark":
+      return (
+        <a
+          href={block.bookmark?.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="my-4 block rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50"
+        >
+          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Bookmark</div>
+          <div className="mt-1 break-all text-sm text-blue-600">{block.bookmark?.url || "Untitled bookmark"}</div>
+          {block.bookmark?.caption?.length > 0 && (
+            <div className="mt-2 text-sm text-gray-600">{renderRichText(block.bookmark.caption)}</div>
+          )}
+        </a>
+      );
+
+    case "video": {
+      const videoUrl = getBlockFileUrl(block.video);
+      if (!videoUrl) {
+        return renderUnsupportedBlock(type);
+      }
+
+      const isHostedVideo = Boolean(block.video?.file?.url);
+      return (
+        <figure className="my-6">
+          {isHostedVideo ? (
+            <video controls className="w-full rounded-lg" src={videoUrl} />
+          ) : (
+            <a
+              href={videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-lg border border-gray-200 bg-gray-50 p-4 text-blue-600 hover:underline"
+            >
+              Open video
+            </a>
+          )}
+          {renderBlockCaption(block.video?.caption)}
+        </figure>
+      );
+    }
+
+    case "file": {
+      const fileUrl = getBlockFileUrl(block.file);
+      if (!fileUrl) {
+        return renderUnsupportedBlock(type);
+      }
+
+      return (
+        <figure className="my-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <a
+            href={fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-blue-600 hover:underline"
+          >
+            Download file
+          </a>
+          {renderBlockCaption(block.file?.caption)}
+        </figure>
+      );
+    }
+
+    case "pdf": {
+      const pdfUrl = getBlockFileUrl(block.pdf);
+      if (!pdfUrl) {
+        return renderUnsupportedBlock(type);
+      }
+
+      return (
+        <figure className="my-6 space-y-3">
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-blue-600 hover:underline"
+          >
+            Open PDF
+          </a>
+          <iframe
+            src={pdfUrl}
+            title={block.pdf?.caption?.[0]?.text?.content || "PDF preview"}
+            className="h-[460px] w-full rounded-lg border border-gray-200"
+          />
+          {renderBlockCaption(block.pdf?.caption)}
+        </figure>
+      );
+    }
+
     case "image":
       const imageUrl = getNotionImageUrl(block);
 
@@ -193,18 +365,10 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       );
 
     case "unsupported":
-      return (
-        <div className="my-4 p-3 bg-yellow-50 text-yellow-700 text-sm rounded">
-          [不支持的块类型]
-        </div>
-      );
+      return renderUnsupportedBlock(type);
 
     default:
-      return (
-        <div className="my-2 text-gray-400 text-sm">
-          [{type}]
-        </div>
-      );
+      return renderUnsupportedBlock(type);
   }
 }
 
