@@ -305,6 +305,7 @@ test.describe("Critical Pages", () => {
 
   test("dashboard shows saved page preview and edit actions for authenticated users", async ({ page }) => {
     let savePayloadTemplate = "";
+    let savePayloadSlug = "";
 
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "clipboard", {
@@ -342,8 +343,9 @@ test.describe("Critical Pages", () => {
 
     await page.route("**/api/user-pages", async (route) => {
       if (route.request().method() === "POST") {
-        const payload = route.request().postDataJSON() as { template?: string };
+        const payload = route.request().postDataJSON() as { template?: string; slug?: string };
         savePayloadTemplate = payload.template || "";
+        savePayloadSlug = payload.slug || "";
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -378,16 +380,20 @@ test.describe("Critical Pages", () => {
     await copyButton.click();
     await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
 
+    await page
+      .getByLabel("Slug for Product Brief")
+      .fill("1234567890abcdef1234567890abcdef-case-study");
+
     await page.getByLabel("Template for Product Brief").selectOption("developer");
     const previewLink = page.getByRole("link", { name: "Preview" });
     await expect(previewLink).toHaveAttribute(
       "href",
-      "/p/1234567890abcdef1234567890abcdef-product-brief?template=developer"
+      "/p/1234567890abcdef1234567890abcdef-case-study?template=developer"
     );
 
-    await page.getByRole("button", { name: "Save template" }).click();
-    await expect(page.getByRole("button", { name: "Saving..." })).toBeVisible();
+    await page.getByRole("button", { name: "Save changes" }).click();
     await expect.poll(() => savePayloadTemplate).toBe("developer");
+    await expect.poll(() => savePayloadSlug).toBe("1234567890abcdef1234567890abcdef-case-study");
 
     const editLink = page.getByRole("link", { name: "Edit in Notion" });
     await expect(editLink).toHaveAttribute(

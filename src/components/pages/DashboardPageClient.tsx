@@ -31,6 +31,7 @@ export default function DashboardPageClient() {
   const [loading, setLoading] = useState(true);
   const [copiedPageId, setCopiedPageId] = useState<string | null>(null);
   const [templateDrafts, setTemplateDrafts] = useState<Record<string, string>>({});
+  const [slugDrafts, setSlugDrafts] = useState<Record<string, string>>({});
   const [savingTemplatePageId, setSavingTemplatePageId] = useState<string | null>(null);
 
   const fetchSavedPages = async () => {
@@ -45,6 +46,15 @@ export default function DashboardPageClient() {
           for (const page of pages as SavedPage[]) {
             if (!nextDrafts[page.id]) {
               nextDrafts[page.id] = page.template || "minimal";
+            }
+          }
+          return nextDrafts;
+        });
+        setSlugDrafts((current) => {
+          const nextDrafts = { ...current };
+          for (const page of pages as SavedPage[]) {
+            if (!nextDrafts[page.id]) {
+              nextDrafts[page.id] = page.slug || page.notionPageId;
             }
           }
           return nextDrafts;
@@ -115,6 +125,7 @@ export default function DashboardPageClient() {
 
   const savePageTemplate = async (savedPage: SavedPage) => {
     const selectedTemplate = templateDrafts[savedPage.id] || savedPage.template || "minimal";
+    const selectedSlug = slugDrafts[savedPage.id] || savedPage.slug || savedPage.notionPageId;
     setSavingTemplatePageId(savedPage.id);
 
     try {
@@ -124,7 +135,7 @@ export default function DashboardPageClient() {
         body: JSON.stringify({
           notionPageId: savedPage.notionPageId,
           title: savedPage.title,
-          slug: savedPage.slug,
+          slug: selectedSlug,
           template: selectedTemplate,
         }),
       });
@@ -288,7 +299,7 @@ export default function DashboardPageClient() {
               {savedPages.length > 0 ? (
                 <div className="space-y-4">
                   {savedPages.map((savedPage) => {
-                    const pageSlug = savedPage.slug || savedPage.notionPageId;
+                    const pageSlug = slugDrafts[savedPage.id] || savedPage.slug || savedPage.notionPageId;
                     const currentTemplate =
                       templateDrafts[savedPage.id] || savedPage.template || "minimal";
                     const previewUrl = `/p/${pageSlug}?template=${currentTemplate}`;
@@ -303,6 +314,17 @@ export default function DashboardPageClient() {
                           <div className="font-medium">{savedPage.title || "Untitled"}</div>
                           <div className="text-sm text-gray-500">Template: {savedPage.template || "minimal"}</div>
                           <div className="mt-2 flex items-center gap-2">
+                            <input
+                              aria-label={`Slug for ${savedPage.title || "Untitled"}`}
+                              value={slugDrafts[savedPage.id] || savedPage.slug || savedPage.notionPageId}
+                              onChange={(event) =>
+                                setSlugDrafts((current) => ({
+                                  ...current,
+                                  [savedPage.id]: event.target.value,
+                                }))
+                              }
+                              className="w-56 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700"
+                            />
                             <select
                               aria-label={`Template for ${savedPage.title || "Untitled"}`}
                               value={templateDrafts[savedPage.id] || savedPage.template || "minimal"}
@@ -324,7 +346,7 @@ export default function DashboardPageClient() {
                               className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
                               disabled={savingTemplatePageId === savedPage.id}
                             >
-                              {savingTemplatePageId === savedPage.id ? "Saving..." : "Save template"}
+                              {savingTemplatePageId === savedPage.id ? "Saving..." : "Save changes"}
                             </button>
                           </div>
                         </div>
