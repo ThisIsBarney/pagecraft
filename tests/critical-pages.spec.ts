@@ -247,6 +247,38 @@ test.describe("Critical Pages", () => {
     await expect(page.getByText("column, embed")).toBeVisible();
   });
 
+  test("create page previews page structure when validation returns linked pages", async ({ page }) => {
+    await page.route("**/api/validate-page**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          type: "page",
+          title: "Site Home",
+          pageStructure: [
+            { id: "1234567890abcdef1234567890abcdef", title: "Site Home" },
+            { id: "1234567890abcdef1234567890abcdee", title: "Nested Case Study" },
+            { id: "1234567890abcdef1234567890abcdea", title: "Linked page" },
+          ],
+        }),
+      });
+    });
+
+    await page.goto("/create");
+    await page
+      .getByLabel("Notion page ID or URL")
+      .fill("1234567890abcdef1234567890abcdef");
+    await page.getByRole("button", { name: /Generate Site/i }).click();
+
+    const structureCard = page.getByText("Page structure preview", { exact: true }).locator("..");
+
+    await expect(page.getByText("Page structure preview", { exact: true })).toBeVisible();
+    await expect(structureCard.getByText("Site Home", { exact: true })).toBeVisible();
+    await expect(structureCard.getByText("Nested Case Study", { exact: true })).toBeVisible();
+    await expect(structureCard.getByText("Linked page", { exact: true })).toBeVisible();
+  });
+
   test("examples page loads", async ({ page }) => {
     const response = await page.goto("/examples");
     expect(response?.status()).toBe(200);

@@ -25,6 +25,7 @@ interface ValidationResult {
   title: string;
   pageId: string;
   unsupportedBlockTypes?: string[];
+  pageStructure?: Array<{ id: string; title: string }>;
 }
 
 interface ValidationSuccessResponse {
@@ -34,6 +35,7 @@ interface ValidationSuccessResponse {
   url?: string;
   hasUnsupportedBlocks?: boolean;
   unsupportedBlockTypes?: string[];
+  pageStructure?: Array<{ id: string; title: string }>;
 }
 
 interface ValidationErrorResponse {
@@ -214,6 +216,7 @@ export default function CreatePageClient() {
         title: data.title,
         pageId: cleanId,
         unsupportedBlockTypes: data.unsupportedBlockTypes || [],
+        pageStructure: data.pageStructure || [],
       });
     } catch {
       setError("Unable to validate page. Please check your connection and try again.");
@@ -320,6 +323,7 @@ export default function CreatePageClient() {
             title: data.title,
             pageId: cleanId,
             unsupportedBlockTypes: data.unsupportedBlockTypes || [],
+            pageStructure: data.pageStructure || [],
           });
           await generateAndSavePage(cleanId, { saveToAccount: true });
         } catch (error) {
@@ -441,6 +445,24 @@ export default function CreatePageClient() {
                         </div>
                       </div>
                     )}
+                  {validationResult?.pageStructure && validationResult.pageStructure.length > 0 && (
+                    <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                      <div className="font-medium text-slate-900">Page structure preview</div>
+                      <ul className="mt-2 space-y-1">
+                        {validationResult.pageStructure.slice(0, 6).map((item) => (
+                          <li key={item.id} className="flex items-start gap-2">
+                            <span className="mt-[3px] inline-block h-1.5 w-1.5 rounded-full bg-slate-400" />
+                            <span className="flex-1">{item.title}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {validationResult.pageStructure.length > 6 && (
+                        <div className="mt-2 text-slate-500">
+                          +{validationResult.pageStructure.length - 6} more pages
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

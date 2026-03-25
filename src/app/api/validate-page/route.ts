@@ -59,6 +59,54 @@ async function collectUnsupportedBlockTypes(notion: Client, rootBlockId: string)
   return Array.from(unsupportedTypes).sort();
 }
 
+interface PageStructureItem {
+  id: string;
+  title: string;
+}
+
+async function collectPageStructurePreview(
+  notion: Client,
+  rootBlockId: string,
+  rootTitle: string
+): Promise<PageStructureItem[]> {
+  const response = await notion.blocks.children.list({
+    block_id: rootBlockId,
+  });
+
+  const items: PageStructureItem[] = [
+    {
+      id: rootBlockId,
+      title: rootTitle || "Home",
+    },
+  ];
+
+  for (const rawBlock of response.results) {
+    const block = rawBlock as {
+      id: string;
+      type: string;
+      child_page?: { title?: string };
+      link_to_page?: { page_id?: string };
+    };
+
+    if (block.type === "child_page") {
+      items.push({
+        id: block.id,
+        title: block.child_page?.title || "Sub page",
+      });
+      continue;
+    }
+
+    if (block.type === "link_to_page" && block.link_to_page?.page_id) {
+      items.push({
+        id: block.link_to_page.page_id,
+        title: "Linked page",
+      });
+    }
+  }
+
+  return items;
+}
+
 interface ValidationFailure {
   success: false;
   error: string;
@@ -129,13 +177,22 @@ export async function GET(request: Request) {
         console.error("Failed to scan page blocks for compatibility hints:", blockScanError);
       }
 
+      const pageTitle = pageData.properties?.title?.title?.[0]?.plain_text || "Untitled";
+      let pageStructure: PageStructureItem[] = [];
+      try {
+        pageStructure = await collectPageStructurePreview(notion, cleanPageId, pageTitle);
+      } catch (structureError) {
+        console.error("Failed to collect page structure preview:", structureError);
+      }
+
       return NextResponse.json({
         success: true,
         type: "page",
-        title: pageData.properties?.title?.title?.[0]?.plain_text || "Untitled",
+        title: pageTitle,
         url: pageData.url,
         hasUnsupportedBlocks: unsupportedBlockTypes.length > 0,
         unsupportedBlockTypes,
+        pageStructure,
       });
     } catch {
       // Not a page, try as database
@@ -152,6 +209,7 @@ export async function GET(request: Request) {
           url: databaseData.url,
           hasUnsupportedBlocks: false,
           unsupportedBlockTypes: [],
+          pageStructure: [],
         });
       } catch {
         // Neither page nor database found
