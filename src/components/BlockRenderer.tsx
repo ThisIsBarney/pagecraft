@@ -27,6 +27,17 @@ function renderBlockCaption(caption: RichText[] | undefined) {
   return <figcaption className="mt-2 text-center text-sm text-gray-500">{renderRichText(caption)}</figcaption>;
 }
 
+function toPlainText(richTexts: RichText[] | undefined) {
+  if (!richTexts || richTexts.length === 0) {
+    return "";
+  }
+
+  return richTexts
+    .map((text) => text.text?.content || "")
+    .join("")
+    .trimEnd();
+}
+
 // 渲染富文本
 function renderRichText(richTexts: RichText[]) {
   return richTexts.map((text, i) => {
@@ -107,10 +118,10 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
     case "bulleted_list_item":
       return (
-        <li className="ml-6 mb-2 list-disc text-gray-800">
+        <li className="mb-2 ml-6 list-disc leading-7 text-gray-800 marker:text-gray-500">
           {renderRichText(block.bulleted_list_item?.rich_text || [])}
           {block.children && (
-            <ul className="mt-2">
+            <ul className="mt-2 border-l border-gray-200 pl-4">
               {block.children.map((child: Block) => (
                 <BlockRenderer key={child.id} block={child} />
               ))}
@@ -121,10 +132,10 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
     case "numbered_list_item":
       return (
-        <li className="ml-6 mb-2 list-decimal text-gray-800">
+        <li className="mb-2 ml-6 list-decimal leading-7 text-gray-800 marker:text-gray-500">
           {renderRichText(block.numbered_list_item?.rich_text || [])}
           {block.children && (
-            <ol className="mt-2">
+            <ol className="mt-2 border-l border-gray-200 pl-4">
               {block.children.map((child: Block) => (
                 <BlockRenderer key={child.id} block={child} />
               ))}
@@ -150,15 +161,15 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
     case "quote":
       return (
-        <blockquote className="border-l-4 border-gray-300 pl-4 py-2 my-4 italic text-gray-700 bg-gray-50">
+        <blockquote className="my-5 rounded-r-lg border-l-4 border-slate-300 bg-slate-50/80 px-4 py-3 text-gray-700 italic leading-7">
           {renderRichText(block.quote?.rich_text || [])}
         </blockquote>
       );
 
     case "callout":
       return (
-        <div className="flex gap-3 p-4 my-4 bg-gray-100 rounded-lg">
-          <span className="text-xl">{block.callout?.icon?.emoji || "💡"}</span>
+        <div className="my-5 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <span className="text-lg leading-none">{block.callout?.icon?.emoji || "💡"}</span>
           <div className="text-gray-800">
             {renderRichText(block.callout?.rich_text || [])}
           </div>
@@ -166,10 +177,12 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       );
 
     case "code":
+      const codeContent = toPlainText(block.code?.rich_text);
+
       return (
-        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg my-4 overflow-x-auto">
-          <code className="text-sm font-mono">
-            {block.code?.rich_text?.[0]?.text?.content || ""}
+        <pre className="my-5 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 p-4 text-slate-100 shadow-sm">
+          <code className="text-sm leading-6 font-mono whitespace-pre-wrap">
+            {codeContent || " "}
           </code>
         </pre>
       );

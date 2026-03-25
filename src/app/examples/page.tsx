@@ -49,6 +49,15 @@ const samplePageContent: PageContent = {
           { type: "text", text: { content: " - Turn Notion into websites" } },
         ],
       },
+      children: [
+        {
+          id: "4-1",
+          type: "bulleted_list_item",
+          bulleted_list_item: {
+            rich_text: [{ type: "text", text: { content: "Nested bullet insight" } }],
+          },
+        },
+      ],
     },
     {
       id: "5",
@@ -59,6 +68,22 @@ const samplePageContent: PageContent = {
           { type: "text", text: { content: " - Personal AI helper" } },
         ],
       },
+    },
+    {
+      id: "5-1",
+      type: "numbered_list_item",
+      numbered_list_item: {
+        rich_text: [{ type: "text", text: { content: "Roadmap item" } }],
+      },
+      children: [
+        {
+          id: "5-1-1",
+          type: "numbered_list_item",
+          numbered_list_item: {
+            rich_text: [{ type: "text", text: { content: "Nested numbered detail" } }],
+          },
+        },
+      ],
     },
     {
       id: "6",
@@ -73,6 +98,32 @@ const samplePageContent: PageContent = {
       paragraph: {
         rich_text: [
           { type: "text", text: { content: "Email: hello@marshall.wu" } },
+        ],
+      },
+    },
+    {
+      id: "7-1",
+      type: "quote",
+      quote: {
+        rich_text: [{ type: "text", text: { content: "Great products feel obvious in hindsight." } }],
+      },
+    },
+    {
+      id: "7-2",
+      type: "callout",
+      callout: {
+        icon: { emoji: "🚀" },
+        rich_text: [{ type: "text", text: { content: "Shipping weekly keeps momentum high." } }],
+      },
+    },
+    {
+      id: "7-3",
+      type: "code",
+      code: {
+        rich_text: [
+          { type: "text", text: { content: "const launch = async () => {" } },
+          { type: "text", text: { content: "\n  await ship(\"pagecraft\");" } },
+          { type: "text", text: { content: "\n};" } },
         ],
       },
     },

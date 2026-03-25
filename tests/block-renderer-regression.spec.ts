@@ -4,6 +4,12 @@ test.describe("BlockRenderer regression", () => {
   test("renders advanced block types on examples page", async ({ page }) => {
     await page.goto("/examples");
 
+    await expect(page.getByText("Nested bullet insight").first()).toBeVisible();
+    await expect(page.getByText("Nested numbered detail").first()).toBeVisible();
+    await expect(page.getByText("Great products feel obvious in hindsight.").first()).toBeVisible();
+    await expect(page.getByText("Shipping weekly keeps momentum high.").first()).toBeVisible();
+    await expect(page.locator("pre code").filter({ hasText: "await ship(\"pagecraft\");" }).first()).toBeVisible();
+
     const toggleSummary = page.locator("summary", { hasText: "Phase 2: Advanced blocks" }).first();
     await expect(toggleSummary).toBeVisible();
     await toggleSummary.click();
