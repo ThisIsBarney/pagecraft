@@ -207,6 +207,20 @@ const samplePageContent: PageContent = {
       id: "15",
       type: "column",
     },
+    {
+      id: "16",
+      type: "link_to_page",
+      link_to_page: {
+        page_id: "12345678-90ab-cdef-1234-567890abcdef",
+      },
+    },
+    {
+      id: "12345678-90ab-cdef-1234-567890abcdee",
+      type: "child_page",
+      child_page: {
+        title: "Nested Case Study",
+      },
+    },
   ],
 };
 

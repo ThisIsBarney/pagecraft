@@ -38,6 +38,15 @@ function toPlainText(richTexts: RichText[] | undefined) {
     .trimEnd();
 }
 
+function toPublicPagePath(pageId: string | undefined) {
+  if (!pageId) {
+    return null;
+  }
+
+  const normalized = pageId.replace(/-/g, "");
+  return normalized ? `/p/${normalized}` : null;
+}
+
 // 渲染富文本
 function renderRichText(richTexts: RichText[]) {
   return richTexts.map((text, i) => {
@@ -363,18 +372,26 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
     case "link_to_page":
       const pageId = block.link_to_page?.page_id;
+      const linkedPagePath = toPublicPagePath(pageId);
       return (
-        <div className="my-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-          <span className="text-blue-600">→ 链接页面</span>
-          {pageId && <span className="text-gray-400 text-sm ml-2">({pageId})</span>}
-        </div>
+        <a
+          href={linkedPagePath || "#"}
+          className="my-4 block rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50"
+        >
+          <span className="text-blue-600">→ Linked page</span>
+          {pageId && <span className="ml-2 text-sm text-gray-400">({pageId})</span>}
+        </a>
       );
 
     case "child_page":
+      const childPagePath = toPublicPagePath(block.id);
       return (
-        <div className="my-4 p-4 border border-gray-200 rounded-lg">
-          <span className="font-medium">📄 {block.child_page?.title || "子页面"}</span>
-        </div>
+        <a
+          href={childPagePath || "#"}
+          className="my-4 block rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50"
+        >
+          <span className="font-medium text-gray-900">📄 {block.child_page?.title || "Sub page"}</span>
+        </a>
       );
 
     case "unsupported":

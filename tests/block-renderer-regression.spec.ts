@@ -23,6 +23,14 @@ test.describe("BlockRenderer regression", () => {
     await expect(page.getByRole("link", { name: "Open video" }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Download file" }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Open PDF" }).first()).toBeVisible();
+
+    const linkedPage = page.getByRole("link", { name: /Linked page/ }).first();
+    await expect(linkedPage).toBeVisible();
+    await expect(linkedPage).toHaveAttribute("href", "/p/1234567890abcdef1234567890abcdef");
+
+    const childPage = page.getByRole("link", { name: /Nested Case Study/ }).first();
+    await expect(childPage).toBeVisible();
+    await expect(childPage).toHaveAttribute("href", "/p/1234567890abcdef1234567890abcdee");
   });
 
   test("shows unsupported fallback for unknown block types", async ({ page }) => {
