@@ -36,6 +36,7 @@ export default function DashboardPageClient() {
   const [sites, setSites] = useState<Site[]>([]);
   const [savedPages, setSavedPages] = useState<SavedPage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [savedPagesError, setSavedPagesError] = useState("");
   const [copiedPageId, setCopiedPageId] = useState<string | null>(null);
   const [templateDrafts, setTemplateDrafts] = useState<Record<string, string>>({});
   const [slugDrafts, setSlugDrafts] = useState<Record<string, string>>({});
@@ -45,60 +46,66 @@ export default function DashboardPageClient() {
   const [savingTemplatePageId, setSavingTemplatePageId] = useState<string | null>(null);
 
   const fetchSavedPages = async () => {
+    setSavedPagesError("");
+
     try {
       const pagesRes = await fetch("/api/user-pages");
-      if (pagesRes.ok) {
-        const pagesData = await pagesRes.json();
-        const pages = pagesData.pages || [];
-        setSavedPages(pages);
-        setTemplateDrafts((current) => {
-          const nextDrafts = { ...current };
-          for (const page of pages as SavedPage[]) {
-            if (!nextDrafts[page.id]) {
-              nextDrafts[page.id] = page.template || "minimal";
-            }
-          }
-          return nextDrafts;
-        });
-        setSlugDrafts((current) => {
-          const nextDrafts = { ...current };
-          for (const page of pages as SavedPage[]) {
-            if (!nextDrafts[page.id]) {
-              nextDrafts[page.id] = page.slug || page.notionPageId;
-            }
-          }
-          return nextDrafts;
-        });
-        setNavOrderDrafts((current) => {
-          const nextDrafts = { ...current };
-          for (const page of pages as SavedPage[]) {
-            if (nextDrafts[page.id] === undefined) {
-              const navOrder = page.settings?.navOrder;
-              nextDrafts[page.id] = typeof navOrder === "number" ? String(navOrder) : "0";
-            }
-          }
-          return nextDrafts;
-        });
-        setHiddenFromNavDrafts((current) => {
-          const nextDrafts = { ...current };
-          for (const page of pages as SavedPage[]) {
-            if (nextDrafts[page.id] === undefined) {
-              nextDrafts[page.id] = Boolean(page.settings?.hideFromNavigation);
-            }
-          }
-          return nextDrafts;
-        });
-        setHomeDraftPageId((current) => {
-          if (current && (pages as SavedPage[]).some((page) => page.id === current)) {
-            return current;
-          }
-
-          const homePage = (pages as SavedPage[]).find((page) => page.settings?.isHome);
-          return homePage?.id || null;
-        });
+      if (!pagesRes.ok) {
+        setSavedPagesError("Unable to load saved pages right now.");
+        return;
       }
+
+      const pagesData = await pagesRes.json();
+      const pages = pagesData.pages || [];
+      setSavedPages(pages);
+      setTemplateDrafts((current) => {
+        const nextDrafts = { ...current };
+        for (const page of pages as SavedPage[]) {
+          if (!nextDrafts[page.id]) {
+            nextDrafts[page.id] = page.template || "minimal";
+          }
+        }
+        return nextDrafts;
+      });
+      setSlugDrafts((current) => {
+        const nextDrafts = { ...current };
+        for (const page of pages as SavedPage[]) {
+          if (!nextDrafts[page.id]) {
+            nextDrafts[page.id] = page.slug || page.notionPageId;
+          }
+        }
+        return nextDrafts;
+      });
+      setNavOrderDrafts((current) => {
+        const nextDrafts = { ...current };
+        for (const page of pages as SavedPage[]) {
+          if (nextDrafts[page.id] === undefined) {
+            const navOrder = page.settings?.navOrder;
+            nextDrafts[page.id] = typeof navOrder === "number" ? String(navOrder) : "0";
+          }
+        }
+        return nextDrafts;
+      });
+      setHiddenFromNavDrafts((current) => {
+        const nextDrafts = { ...current };
+        for (const page of pages as SavedPage[]) {
+          if (nextDrafts[page.id] === undefined) {
+            nextDrafts[page.id] = Boolean(page.settings?.hideFromNavigation);
+          }
+        }
+        return nextDrafts;
+      });
+      setHomeDraftPageId((current) => {
+        if (current && (pages as SavedPage[]).some((page) => page.id === current)) {
+          return current;
+        }
+
+        const homePage = (pages as SavedPage[]).find((page) => page.settings?.isHome);
+        return homePage?.id || null;
+      });
     } catch (err) {
       console.error("Failed to fetch saved pages:", err);
+      setSavedPagesError("Unable to load saved pages right now.");
     }
   };
 
@@ -358,7 +365,19 @@ export default function DashboardPageClient() {
             {/* My Pages */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
               <h2 className="text-xl font-bold mb-4">My Pages</h2>
-              {savedPages.length > 0 ? (
+              {savedPagesError ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  <p className="font-medium">{savedPagesError}</p>
+                  <p className="mt-1 text-amber-800">Please try again in a moment.</p>
+                  <button
+                    type="button"
+                    onClick={fetchSavedPages}
+                    className="mt-3 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+                  >
+                    Retry loading pages
+                  </button>
+                </div>
+              ) : savedPages.length > 0 ? (
                 <div className="space-y-4">
                   {orderedSavedPages.map((savedPage) => {
                     const pageSlug = slugDrafts[savedPage.id] || savedPage.slug || savedPage.notionPageId;

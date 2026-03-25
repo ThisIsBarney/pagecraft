@@ -532,6 +532,81 @@ test.describe("Critical Pages", () => {
     );
   });
 
+  test("dashboard retries loading saved pages after initial failure", async ({ page }) => {
+    let pagesRequestCount = 0;
+
+    await page.route("**/api/auth", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "user_1",
+            email: "demo@example.com",
+            name: "Demo",
+            subscriptionStatus: "active",
+          },
+        }),
+      });
+    });
+
+    await page.route("**/api/user-domains**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          domains: [],
+        }),
+      });
+    });
+
+    await page.route("**/api/user-pages", async (route) => {
+      if (route.request().method() !== "GET") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ success: true }),
+        });
+        return;
+      }
+
+      pagesRequestCount += 1;
+      if (pagesRequestCount === 1) {
+        await route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Failed to fetch pages" }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          pages: [
+            {
+              id: "page_retry_1",
+              notionPageId: "1234567890abcdef1234567890abcdef",
+              title: "Recovered Page",
+              slug: "1234567890abcdef1234567890abcdef-recovered-page",
+              template: "creator",
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto("/dashboard");
+    await expect(page.getByText("Unable to load saved pages right now.")).toBeVisible();
+
+    await page.getByRole("button", { name: "Retry loading pages" }).click();
+
+    await expect.poll(() => pagesRequestCount).toBeGreaterThanOrEqual(2);
+    await expect(page.getByText("Recovered Page")).toBeVisible();
+    await expect(page.getByText("Template: creator")).toBeVisible();
+  });
+
   test("domains page loads", async ({ page }) => {
     const response = await page.goto("/domains");
     expect(response?.status()).toBe(200);
