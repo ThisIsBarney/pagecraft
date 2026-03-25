@@ -289,7 +289,9 @@ export default function DashboardPageClient() {
                 <div className="space-y-4">
                   {savedPages.map((savedPage) => {
                     const pageSlug = savedPage.slug || savedPage.notionPageId;
-                    const previewUrl = `/p/${pageSlug}?template=${savedPage.template || "minimal"}`;
+                    const currentTemplate =
+                      templateDrafts[savedPage.id] || savedPage.template || "minimal";
+                    const previewUrl = `/p/${pageSlug}?template=${currentTemplate}`;
                     const notionUrl = `https://www.notion.so/${savedPage.notionPageId}`;
 
                     return (
@@ -329,7 +331,7 @@ export default function DashboardPageClient() {
                         <div className="flex gap-2">
                           <button
                             type="button"
-                            onClick={() => copyPublishUrl(savedPage.id, pageSlug, savedPage.template)}
+                            onClick={() => copyPublishUrl(savedPage.id, pageSlug, currentTemplate)}
                             className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
                           >
                             {copiedPageId === savedPage.id ? "Copied" : "Copy URL"}

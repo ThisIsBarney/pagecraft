@@ -379,15 +379,15 @@ test.describe("Critical Pages", () => {
     await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
 
     await page.getByLabel("Template for Product Brief").selectOption("developer");
-    await page.getByRole("button", { name: "Save template" }).click();
-    await expect(page.getByRole("button", { name: "Saving..." })).toBeVisible();
-    await expect.poll(() => savePayloadTemplate).toBe("developer");
-
     const previewLink = page.getByRole("link", { name: "Preview" });
     await expect(previewLink).toHaveAttribute(
       "href",
-      "/p/1234567890abcdef1234567890abcdef-product-brief?template=designer"
+      "/p/1234567890abcdef1234567890abcdef-product-brief?template=developer"
     );
+
+    await page.getByRole("button", { name: "Save template" }).click();
+    await expect(page.getByRole("button", { name: "Saving..." })).toBeVisible();
+    await expect.poll(() => savePayloadTemplate).toBe("developer");
 
     const editLink = page.getByRole("link", { name: "Edit in Notion" });
     await expect(editLink).toHaveAttribute(
