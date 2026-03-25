@@ -10,6 +10,7 @@ const templates = [
   { id: "minimal", name: "Minimal", description: "Clean and simple", color: "bg-white" },
   { id: "designer", name: "Designer", description: "Bold and creative", color: "bg-gradient-to-br from-violet-500 to-fuchsia-500" },
   { id: "developer", name: "Developer", description: "Code editor style", color: "bg-[#1e1e1e]" },
+  { id: "creator", name: "Creator", description: "Warm editorial showcase", color: "bg-gradient-to-br from-amber-200 via-rose-200 to-white" },
 ];
 
 type SubmissionStage = "idle" | "validating" | "awaiting-auth" | "saving";
@@ -509,7 +510,7 @@ export default function CreatePageClient() {
             <label className="block text-sm font-medium text-gray-700 mb-3">
               Choose a template
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {templates.map((template) => (
                 <button
                   key={template.id}

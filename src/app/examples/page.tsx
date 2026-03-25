@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { MinimalTemplate } from "@/components/templates/MinimalTemplate";
 import { DesignerTemplate } from "@/components/templates/DesignerTemplate";
 import { DeveloperTemplate } from "@/components/templates/DeveloperTemplate";
+import { CreatorTemplate } from "@/components/templates/CreatorTemplate";
 import { DatabaseTemplate } from "@/components/templates/DatabaseTemplate";
 import { PageContent } from "@/lib/notion";
 import { buildPageMetadata } from "@/lib/metadata";
@@ -323,6 +324,20 @@ export default function ExamplePage() {
           </div>
           <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
             <DeveloperTemplate content={samplePageContent} author="Marshall WU" />
+          </div>
+        </section>
+
+        {/* Creator Template */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold">Creator</h2>
+              <p className="text-gray-600">Warm editorial style for newsletters, essays, and creator updates.</p>
+            </div>
+            <a href="/p/demo-creator?template=creator" className="text-blue-600 hover:underline">Preview →</a>
+          </div>
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
+            <CreatorTemplate content={samplePageContent} author="Marshall WU" />
           </div>
         </section>
 

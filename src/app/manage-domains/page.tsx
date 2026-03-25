@@ -166,6 +166,7 @@ export default function ManageDomainsPage() {
                   <option value="minimal">Minimal</option>
                   <option value="designer">Designer</option>
                   <option value="developer">Developer</option>
+                  <option value="creator">Creator</option>
                 </select>
               </div>
             </div>

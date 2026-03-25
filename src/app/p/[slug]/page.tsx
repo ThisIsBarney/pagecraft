@@ -2,6 +2,7 @@ import { getPublicPageContent, toNotionEditUrl } from "@/lib/notion";
 import { MinimalTemplate } from "@/components/templates/MinimalTemplate";
 import { DesignerTemplate } from "@/components/templates/DesignerTemplate";
 import { DeveloperTemplate } from "@/components/templates/DeveloperTemplate";
+import { CreatorTemplate } from "@/components/templates/CreatorTemplate";
 import { DatabaseTemplate } from "@/components/templates/DatabaseTemplate";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { buildNavigationItems, buildSavedPageNavigationItems } from "@/lib/navigation";
@@ -33,6 +34,8 @@ function getTemplate(templateName: string | undefined) {
       return DesignerTemplate;
     case "developer":
       return DeveloperTemplate;
+    case "creator":
+      return CreatorTemplate;
     case "minimal":
     default:
       return MinimalTemplate;

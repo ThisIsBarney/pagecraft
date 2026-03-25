@@ -32,6 +32,7 @@ test.describe("Critical Pages", () => {
     
     await expect(page.locator("text=Create your site")).toBeVisible();
     await expect(page.locator("button:has-text('Generate')")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Creator/i })).toBeVisible();
     await expectMetadata(
       page,
       "Create a Site | PageCraft",
@@ -395,6 +396,7 @@ test.describe("Critical Pages", () => {
     expect(response?.status()).toBe(200);
     
     await expect(page.locator("text=Template Gallery")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Creator" })).toBeVisible();
     await expectMetadata(
       page,
       "Template Gallery | PageCraft",
