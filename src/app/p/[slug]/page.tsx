@@ -4,6 +4,7 @@ import { DesignerTemplate } from "@/components/templates/DesignerTemplate";
 import { DeveloperTemplate } from "@/components/templates/DeveloperTemplate";
 import { DatabaseTemplate } from "@/components/templates/DatabaseTemplate";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
+import { buildNavigationItems } from "@/lib/navigation";
 
 interface PageProps {
   params: {
@@ -43,12 +44,34 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
 
   try {
     const content = await getPublicPageContent(pageId);
+    const navigationItems = buildNavigationItems(content.blocks, pageId);
+
+    const pageNavigation = (
+      <nav className="sticky top-0 z-30 border-b border-gray-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center gap-2 overflow-x-auto px-4 py-3 sm:px-6">
+          {navigationItems.map((item) => (
+            <a
+              key={item.id}
+              href={item.href}
+              className={`whitespace-nowrap rounded-full px-3 py-1 text-sm transition-colors ${
+                item.isCurrent
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {item.title}
+            </a>
+          ))}
+        </div>
+      </nav>
+    );
 
     // Database 类型固定使用 DatabaseTemplate
     if (content.type === "database") {
       return (
         <>
           <AnalyticsTracker pageId={pageId} />
+          {pageNavigation}
           <DatabaseTemplate content={content} />
         </>
       );
@@ -59,6 +82,7 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     return (
       <>
         <AnalyticsTracker pageId={pageId} />
+        {pageNavigation}
         <Template content={content} />
       </>
     );
