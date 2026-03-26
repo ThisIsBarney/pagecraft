@@ -1,65 +1,117 @@
 import { test, expect } from "@playwright/test";
 
-const BASE_URL = "https://pagecraft-eight.vercel.app";
+test.describe("Payment E2E Branches", () => {
+  test("domains page blocks invalid domain input before checkout", async ({ page }) => {
+    await page.goto("/domains");
 
-test.describe("Payment Flow", () => {
-  test("checkout page loads", async ({ page }) => {
-    await page.goto(`${BASE_URL}/domains`);
-    
-    // 检查页面元素
-    await expect(page.locator("text=Upgrade to Pro")).toBeVisible();
-    await expect(page.locator("text=$6")).toBeVisible();
-    
-    // 填写表单
-    await page.fill("input[placeholder*='example.com']", "test-example.com");
-    await page.fill("input[placeholder*='1a2b3c4d']", "262bffda61bf80c8b116f6f1ec278d68");
-    
-    // 点击订阅按钮
-    const subscribeBtn = page.locator("button:has-text('Subscribe')");
-    await expect(subscribeBtn).toBeVisible();
-    
-    // 截图记录
-    await page.screenshot({ path: "test-results/payment-page.png" });
-    
-    console.log("✅ Payment page loaded successfully");
+    await page.fill("#custom-domain", "bad domain");
+    await page.getByRole("button", { name: /Upgrade to Pro/i }).click();
+
+    await expect(
+      page.getByText("Enter a valid custom domain, for example `example.com`.")
+    ).toBeVisible();
   });
 
-  test("checkout API creates session", async ({ request }) => {
-    const response = await request.post(`${BASE_URL}/api/checkout`, {
-      data: {
-        domain: "test-example.com",
-        pageId: "262bffda61bf80c8b116f6f1ec278d68",
-        template: "minimal",
-      },
+  test("domains page normalizes payload and redirects when checkout succeeds", async ({ page }) => {
+    await page.route("**/api/checkout", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          url: "/payment/cancel",
+        }),
+      });
     });
 
-    const data = await response.json();
-    
-    if (response.ok()) {
-      console.log("✅ Checkout session created:", data.url);
-      expect(data.url).toContain("stripe.com");
-    } else {
-      console.log("❌ Checkout failed:", data.error);
-      // 如果 Stripe 没配置，会返回错误
-      expect(data.error).toBeTruthy();
-    }
+    await page.goto("/domains");
+    await page.fill("#custom-domain", "HTTPS://WWW.Example.com/path");
+    await page.fill(
+      "#notion-page-id",
+      "https://www.notion.so/workspace/1234567890abcdef1234567890abcdef?v=abc"
+    );
+    await page.selectOption("#default-template", "creator");
+
+    const checkoutRequestPromise = page.waitForRequest("**/api/checkout");
+    await page.getByRole("button", { name: /Upgrade to Pro/i }).click();
+    const checkoutRequest = await checkoutRequestPromise;
+
+    expect(checkoutRequest.method()).toBe("POST");
+    expect(checkoutRequest.postDataJSON()).toMatchObject({
+      domain: "www.example.com",
+      pageId: "1234567890abcdef1234567890abcdef",
+      template: "creator",
+    });
+
+    await page.waitForURL("**/payment/cancel");
   });
 
-  test("payment success page", async ({ page }) => {
-    await page.goto(`${BASE_URL}/payment/success?session_id=test_123`);
-    
-    await expect(page.locator("text=Welcome to Pro")).toBeVisible();
-    await page.screenshot({ path: "test-results/payment-success.png" });
-    
-    console.log("✅ Payment success page OK");
+  test("domains page shows checkout API error", async ({ page }) => {
+    await page.route("**/api/checkout", async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Checkout service unavailable" }),
+      });
+    });
+
+    await page.goto("/domains");
+    await page.fill("#custom-domain", "example.com");
+    await page.getByRole("button", { name: /Upgrade to Pro/i }).click();
+
+    await expect(page.getByText("Checkout service unavailable")).toBeVisible();
   });
 
-  test("payment cancel page", async ({ page }) => {
-    await page.goto(`${BASE_URL}/payment/cancel`);
-    
-    await expect(page.locator("text=Payment Cancelled")).toBeVisible();
-    await page.screenshot({ path: "test-results/payment-cancel.png" });
-    
-    console.log("✅ Payment cancel page OK");
+  test("payment success page keeps processing state when session is missing", async ({ page }) => {
+    await page.goto("/payment/success");
+    await expect(page.getByText("Processing...")).toBeVisible();
+    await expect(page.getByText("Welcome to Pro!")).not.toBeVisible();
+  });
+
+  test("payment success page shows post-payment guidance on successful verification", async ({ page }) => {
+    await page.route("**/api/verify-payment", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          domain: "creator-example.com",
+          pageId: "1234567890abcdef1234567890abcdef",
+          template: "creator",
+        }),
+      });
+    });
+
+    await page.goto("/payment/success?session_id=test_success_session");
+
+    await expect(page.getByRole("heading", { name: "Welcome to Pro!" })).toBeVisible();
+    await expect(page.getByText("creator-example.com")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Go to Dashboard" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Visit Your Site →" })).toHaveAttribute(
+      "href",
+      "https://creator-example.com"
+    );
+  });
+
+  test("payment success page shows error branch when verification fails", async ({ page }) => {
+    await page.route("**/api/verify-payment", async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Failed to verify payment" }),
+      });
+    });
+
+    await page.goto("/payment/success?session_id=test_error_session");
+
+    await expect(page.getByRole("heading", { name: "Something went wrong" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Try Again" })).toHaveAttribute("href", "/domains");
+  });
+
+  test("payment cancel page renders recovery actions", async ({ page }) => {
+    await page.goto("/payment/cancel");
+
+    await expect(page.getByRole("heading", { name: "Payment Cancelled" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Try Again" })).toHaveAttribute("href", "/domains");
+    await expect(page.getByRole("link", { name: "Back to Home" })).toHaveAttribute("href", "/");
   });
 });
