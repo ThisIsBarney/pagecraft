@@ -397,6 +397,8 @@ test.describe("Critical Pages", () => {
     
     await expect(page.locator("text=Template Gallery")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Creator" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Card View" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Table View" })).toBeVisible();
     await expectMetadata(
       page,
       "Template Gallery | PageCraft",

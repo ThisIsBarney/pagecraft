@@ -7,6 +7,9 @@ interface DatabaseTemplateProps {
 
 export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
   const { title, databaseInfo, databaseEntries = [] } = content;
+  const tableColumns = Array.from(
+    new Set(databaseEntries.flatMap((entry) => Object.keys(entry.properties || {})))
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -37,63 +40,103 @@ export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
           </div>
         </div>
 
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {databaseEntries.map((entry) => (
-            <a
-              key={entry.id}
-              href={entry.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col"
-            >
-              {/* Cover Image - 减小高度 */}
-              {entry.cover ? (
-                <div className="aspect-[16/9] bg-gray-100 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={entry.cover}
-                    alt={entry.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              ) : entry.icon ? (
-                // 有图标但没有封面 - 小图标样式
-                <div className="h-12 bg-gradient-to-br from-blue-50 to-purple-50 flex items-center px-4">
-                  <span className="text-xl mr-2">{entry.icon}</span>
-                </div>
-              ) : null}
+        {/* Cards View */}
+        <section className="mb-10">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">Card View</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {databaseEntries.map((entry) => (
+              <a
+                key={entry.id}
+                href={entry.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col"
+              >
+                {entry.cover ? (
+                  <div className="aspect-[16/9] bg-gray-100 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={entry.cover}
+                      alt={entry.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                ) : entry.icon ? (
+                  <div className="h-12 bg-gradient-to-br from-blue-50 to-purple-50 flex items-center px-4">
+                    <span className="text-xl mr-2">{entry.icon}</span>
+                  </div>
+                ) : null}
 
-              {/* Content */}
-              <div className="p-4 sm:p-5 flex-1">
-                <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors leading-snug">
-                  {entry.icon && !entry.cover ? (
-                    <span className="mr-2">{entry.icon}</span>
-                  ) : null}
-                  {entry.title}
-                </h3>
+                <div className="p-4 sm:p-5 flex-1">
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors leading-snug">
+                    {entry.icon && !entry.cover ? <span className="mr-2">{entry.icon}</span> : null}
+                    {entry.title}
+                  </h3>
 
-                {/* Properties */}
-                <div className="space-y-1.5">
-                  {Object.entries(entry.properties)
-                    .filter(([key, value]) => {
-                      // 过滤掉空值和标题字段
-                      if (!value || value === "Untitled") return false;
-                      if (key.toLowerCase() === "name") return false;
-                      return true;
-                    })
-                    .slice(0, 4) // 最多显示4个属性
-                    .map(([key, value]) => (
-                      <div key={key} className="flex items-start gap-2 text-xs sm:text-sm">
-                        <span className="text-gray-400 shrink-0 text-xs uppercase tracking-wide">{key}</span>
-                        <span className="text-gray-700 truncate">{value}</span>
-                      </div>
+                  <div className="space-y-1.5">
+                    {Object.entries(entry.properties)
+                      .filter(([key, value]) => {
+                        if (!value || value === "Untitled") return false;
+                        if (key.toLowerCase() === "name") return false;
+                        return true;
+                      })
+                      .slice(0, 4)
+                      .map(([key, value]) => (
+                        <div key={key} className="flex items-start gap-2 text-xs sm:text-sm">
+                          <span className="text-gray-400 shrink-0 text-xs uppercase tracking-wide">{key}</span>
+                          <span className="text-gray-700 truncate">{value}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        {/* Table View */}
+        {databaseEntries.length > 0 && (
+          <section className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <div className="border-b border-gray-200 px-4 py-3 sm:px-6">
+              <h2 className="text-lg font-semibold text-gray-900">Table View</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse text-left text-sm">
+                <thead>
+                  <tr className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                    <th className="border-b border-gray-200 px-4 py-3 font-medium sm:px-6">Title</th>
+                    {tableColumns.map((column) => (
+                      <th key={column} className="border-b border-gray-200 px-4 py-3 font-medium sm:px-6">
+                        {column}
+                      </th>
                     ))}
-                </div>
-              </div>
-            </a>
-          ))}
-        </div>
+                  </tr>
+                </thead>
+                <tbody>
+                  {databaseEntries.map((entry) => (
+                    <tr key={entry.id} className="border-b border-gray-100 align-top last:border-b-0">
+                      <td className="px-4 py-3 font-medium text-gray-900 sm:px-6">
+                        <a
+                          href={entry.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-blue-600 hover:underline"
+                        >
+                          {entry.title}
+                        </a>
+                      </td>
+                      {tableColumns.map((column) => (
+                        <td key={`${entry.id}-${column}`} className="px-4 py-3 text-gray-700 sm:px-6">
+                          {entry.properties[column] || "—"}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         {/* Empty State */}
         {databaseEntries.length === 0 && (
