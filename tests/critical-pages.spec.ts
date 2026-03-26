@@ -742,6 +742,35 @@ test.describe("API Endpoints", () => {
     expect([200, 404]).toContain(response.status());
   });
 
+  test("domains API registration can be retrieved by domain", async ({ request }) => {
+    const domain = `pc${Date.now()}.com`;
+    const email = "owner@example.com";
+
+    const registerResponse = await request.post("/api/domains", {
+      data: {
+        domain,
+        pageId: "1234567890abcdef1234567890abcdef",
+        template: "creator",
+        userEmail: email,
+      },
+    });
+
+    expect(registerResponse.status()).toBe(200);
+    await expect(registerResponse.json()).resolves.toMatchObject({
+      success: true,
+      domain,
+    });
+
+    const fetchResponse = await request.get(`/api/domains?domain=${encodeURIComponent(domain)}`);
+    expect(fetchResponse.status()).toBe(200);
+
+    await expect(fetchResponse.json()).resolves.toMatchObject({
+      template: "creator",
+      pageId: "1234567890abcdef1234567890abcdef",
+      userEmail: email,
+    });
+  });
+
   test("verify payment rejects missing session ID", async ({ request }) => {
     const response = await request.post("/api/verify-payment", {
       data: {},

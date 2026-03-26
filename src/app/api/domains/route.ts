@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-
-// 内存存储（生产环境用数据库）
-const domainStore: Record<string, {
-  pageId: string;
-  template: string;
-  verified: boolean;
-  subscriptionId?: string;
-}> = {};
+import { domainsDb } from "@/lib/db";
 
 // 获取域名配置
 export async function GET(request: Request) {
@@ -18,7 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Domain required" }, { status: 400 });
   }
 
-  const config = domainStore[domain];
+  const config = await domainsDb.get(domain.toLowerCase());
   if (!config) {
     return NextResponse.json({ error: "Domain not found" }, { status: 404 });
   }
@@ -30,7 +23,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { domain, pageId, template = "minimal", subscriptionId } = body;
+    const { domain, pageId, template = "minimal", subscriptionId, userEmail } = body;
 
     if (!domain || !pageId) {
       return NextResponse.json(
@@ -48,21 +41,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // 保存配置
-    domainStore[domain] = {
+    const normalizedDomain = domain.toLowerCase();
+    const now = new Date().toISOString();
+
+    await domainsDb.set(normalizedDomain, {
       pageId,
       template,
+      userEmail: typeof userEmail === "string" ? userEmail : undefined,
       verified: true, // 支付后自动验证
       subscriptionId,
-    };
+      createdAt: now,
+      updatedAt: now,
+    });
 
     return NextResponse.json({
       success: true,
-      domain,
+      domain: normalizedDomain,
       message: "Domain registered successfully",
       dns: {
         type: "CNAME",
-        name: domain,
+        name: normalizedDomain,
         value: "pagecraft-eight.vercel.app",
       },
     });
@@ -96,14 +94,20 @@ export async function PUT(request: Request) {
       const { domain, pageId, template } = session.metadata || {};
 
       if (domain && pageId) {
-        domainStore[domain] = {
+        const normalizedDomain = String(domain).toLowerCase();
+        const existing = await domainsDb.get(normalizedDomain);
+
+        await domainsDb.set(normalizedDomain, {
           pageId,
           template: template || "minimal",
           verified: true,
-          subscriptionId: session.subscription,
-        };
+          subscriptionId: typeof session.subscription === "string" ? session.subscription : undefined,
+          userEmail: existing?.userEmail,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
 
-        console.log("Domain registered after payment:", domain);
+        console.log("Domain registered after payment:", normalizedDomain);
       }
     }
 

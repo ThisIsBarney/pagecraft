@@ -19,7 +19,7 @@ interface User {
 }
 
 export default function ManageDomainsPage() {
-  const [, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [domains, setDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(true);
   const [newDomain, setNewDomain] = useState("");
@@ -65,6 +65,12 @@ export default function ManageDomainsPage() {
     e.preventDefault();
     setAdding(true);
 
+    if (!user?.email) {
+      alert("Unable to resolve your account email. Please sign in again.");
+      setAdding(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/domains", {
         method: "POST",
@@ -73,6 +79,7 @@ export default function ManageDomainsPage() {
           domain: newDomain,
           pageId: newPageId,
           template: newTemplate,
+          userEmail: user.email,
         }),
       });
 
