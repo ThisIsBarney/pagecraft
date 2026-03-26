@@ -17,7 +17,7 @@
 - [x] 数据库渲染（表格/卡片视图）
 - [x] 子页面/嵌套内容支持
 - [x] 多模板选择（极简、设计师、开发者、Creator）
-- [ ] 自定义域名支持
+- [x] 自定义域名支持
 
 ### Phase 3: 商业化
 - [x] **用户系统基础** - Supabase 集成完成
@@ -45,6 +45,7 @@
 13. 新增 `Creator` 模板，并接入创建页、公开页、仪表盘模板切换、域名流程和模板画廊。
 14. 仪表盘 `My Pages` 新增加载失败提示与重试按钮，支持页面列表失败后无刷新恢复。
 15. 关键回归持续扩展并通过：`critical-pages`、`navigation`、`block-renderer` 当前 38 条用例稳定通过。
+16. 自定义域名链路已统一到共享 `domainsDb`（`/api/domains` 与 `/api/user-domains`），并补齐管理页归属与 API 回归验证。
 
 ## Supabase 集成完成项
 ✅ 安装 @supabase/supabase-js 依赖
