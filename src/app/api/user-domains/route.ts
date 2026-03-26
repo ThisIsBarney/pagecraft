@@ -21,6 +21,7 @@ export async function GET(request: Request) {
         pageId: config.pageId,
         template: config.template,
         url: `https://${domain}`,
+        verified: Boolean(config.verified),
       }));
 
     return NextResponse.json({

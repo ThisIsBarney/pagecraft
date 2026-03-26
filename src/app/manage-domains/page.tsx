@@ -208,7 +208,18 @@ export default function ManageDomainsPage() {
               {domains.map((domain) => (
                 <div key={domain.domain} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
                   <div>
-                    <div className="font-medium text-lg">{domain.domain}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-lg">{domain.domain}</span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          domain.verified
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {domain.verified ? "Verified" : "Pending"}
+                      </span>
+                    </div>
                     <div className="text-sm text-gray-500">
                       Template: {domain.template} | Page: {domain.pageId.slice(0, 8)}...
                     </div>
