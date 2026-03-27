@@ -4,9 +4,9 @@ test.describe("Auth + Domain Access Branches", () => {
   test("dashboard shows sign-in form for unauthenticated users", async ({ page }) => {
     await page.goto("/dashboard");
 
-    await expect(page.getByRole("heading", { name: "Welcome to PageCraft" })).toBeVisible();
-    await expect(page.getByText("Sign in to manage your sites")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Sign In / Sign Up" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sign in to PageCraft" })).toBeVisible();
+    await expect(page.getByText("Manage pages, domains, and publishing settings.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   });
 
   test("dashboard shows authenticated free-user state", async ({ page }) => {
@@ -47,7 +47,7 @@ test.describe("Auth + Domain Access Branches", () => {
 
     await expect(page.getByText(email)).toBeVisible();
     await expect(page.getByText("Free").first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "Connect Domain" })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "Upgrade for domains" })).toHaveAttribute(
       "href",
       "/domains"
     );
@@ -57,7 +57,7 @@ test.describe("Auth + Domain Access Branches", () => {
     await page.goto("/manage-domains");
     await page.waitForURL("**/dashboard");
 
-    await expect(page.getByRole("heading", { name: "Welcome to PageCraft" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sign in to PageCraft" })).toBeVisible();
   });
 
   test("dashboard uses manage-domains entry for pro users", async ({ page }) => {
@@ -114,7 +114,7 @@ test.describe("Auth + Domain Access Branches", () => {
     await page.goto("/dashboard");
 
     await expect(page.getByText("Pro").first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "Manage Domains" })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "Manage domains" })).toHaveAttribute(
       "href",
       "/manage-domains"
     );
