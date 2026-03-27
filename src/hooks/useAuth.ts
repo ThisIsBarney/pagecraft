@@ -31,12 +31,21 @@ export function useAuth() {
     }
   };
 
-  const login = async (email: string, name?: string) => {
+  const login = async (
+    email: string,
+    password: string,
+    options?: { mode?: "login" | "register"; name?: string }
+  ) => {
     try {
       const response = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name }),
+        body: JSON.stringify({
+          email,
+          password,
+          mode: options?.mode || "login",
+          name: options?.name,
+        }),
       });
 
       if (!response.ok) {

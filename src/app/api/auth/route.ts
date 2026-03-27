@@ -1,28 +1,94 @@
 import { NextResponse } from "next/server";
 import { usersDb } from "@/lib/db";
 import { sessions } from "@/lib/auth";
+import { hashPassword, verifyPassword } from "@/lib/password";
+
+type AuthMode = "login" | "register";
+
+function normalizeMode(value: unknown): AuthMode {
+  return value === "register" ? "register" : "login";
+}
 
 // 注册/登录
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, name } = body;
+    const { email, name, password, mode } = body as {
+      email?: string;
+      name?: string;
+      password?: string;
+      mode?: AuthMode;
+    };
+    const authMode = normalizeMode(mode);
+    const normalizedEmail = email?.trim().toLowerCase();
 
-    if (!email) {
+    if (!normalizedEmail) {
       return NextResponse.json({ error: "Email required" }, { status: 400 });
     }
 
-    // 查找或创建用户
-    let user = await usersDb.getByEmail(email);
-    
+    if (typeof password !== "string" || password.length < 8) {
+      return NextResponse.json(
+        { error: "Password must be at least 8 characters" },
+        { status: 400 }
+      );
+    }
+
+    let user = await usersDb.getByEmail(normalizedEmail);
+
+    if (authMode === "register") {
+      const { hash, salt } = hashPassword(password);
+
+      if (user?.passwordHash && user?.passwordSalt) {
+        return NextResponse.json(
+          { error: "Account already exists. Please sign in instead." },
+          { status: 409 }
+        );
+      }
+
+      if (!user) {
+        // 创建新用户
+        const id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        user = {
+          id,
+          email: normalizedEmail,
+          name: name || normalizedEmail.split("@")[0],
+          passwordHash: hash,
+          passwordSalt: salt,
+          subscriptionStatus: "free",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      } else {
+        // 兼容旧账户：首次设置密码并补齐资料
+        user.passwordHash = hash;
+        user.passwordSalt = salt;
+        user.name = name || user.name || normalizedEmail.split("@")[0];
+        user.updatedAt = new Date().toISOString();
+      }
+      await usersDb.set(user.id, user);
+    } else {
+      if (!user || !user.passwordHash || !user.passwordSalt) {
+        return NextResponse.json(
+          { error: "Invalid email or password." },
+          { status: 401 }
+        );
+      }
+
+      if (!verifyPassword(password, user.passwordSalt, user.passwordHash)) {
+        return NextResponse.json(
+          { error: "Invalid email or password." },
+          { status: 401 }
+        );
+      }
+    }
+
     if (!user) {
-      // 创建新用户
       const id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       user = {
         id,
-        email,
-        name: name || email.split('@')[0],
-        subscriptionStatus: 'free',
+        email: normalizedEmail,
+        name: name || normalizedEmail.split("@")[0],
+        subscriptionStatus: "free",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -44,10 +110,10 @@ export async function POST(request: Request) {
       },
     });
 
-    response.cookies.set('session', sessionId, {
+    response.cookies.set("session", sessionId, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 60 * 60 * 24 * 7, // 7 days
     });
 
@@ -60,8 +126,8 @@ export async function POST(request: Request) {
 
 // 获取当前用户
 export async function GET(request: Request) {
-  const sessionId = request.headers.get('cookie')?.match(/session=([^;]+)/)?.[1];
-  
+  const sessionId = request.headers.get("cookie")?.match(/session=([^;]+)/)?.[1];
+
   if (!sessionId || !sessions[sessionId]) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
@@ -85,14 +151,14 @@ export async function GET(request: Request) {
 
 // 登出
 export async function DELETE(request: Request) {
-  const sessionId = request.headers.get('cookie')?.match(/session=([^;]+)/)?.[1];
-  
+  const sessionId = request.headers.get("cookie")?.match(/session=([^;]+)/)?.[1];
+
   if (sessionId) {
     delete sessions[sessionId];
   }
 
   const response = NextResponse.json({ success: true });
-  response.cookies.delete('session');
-  
+  response.cookies.delete("session");
+
   return response;
 }

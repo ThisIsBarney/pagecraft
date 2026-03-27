@@ -51,11 +51,11 @@ function toPublicPagePath(pageId: string | undefined) {
 function renderRichText(richTexts: RichText[]) {
   return richTexts.map((text, i) => {
     const { annotations, text: textContent } = text;
-    let content = textContent?.content || "";
+    let content: React.ReactNode = textContent?.content || "";
 
     if (annotations?.code) {
       return (
-        <code key={i} className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
+        <code key={i} className="rounded-md bg-stone-100 px-1.5 py-0.5 text-[0.9em] font-medium text-stone-800">
           {content}
         </code>
       );
@@ -65,13 +65,13 @@ function renderRichText(richTexts: RichText[]) {
       content = (
         <a
           href={textContent.link.url}
-          className="text-blue-600 hover:underline"
+          className="break-words text-blue-700 underline decoration-blue-300 underline-offset-4 transition hover:text-blue-800 hover:decoration-blue-500"
           target="_blank"
           rel="noopener noreferrer"
         >
           {content}
         </a>
-      ) as unknown as string;
+      );
     }
 
     return (
@@ -97,7 +97,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   switch (type) {
     case "paragraph":
       return (
-        <p className="mb-4 leading-relaxed text-gray-800">
+        <p className="mb-5 break-words text-base leading-8 text-stone-700 sm:text-[1.04rem]">
           {block.paragraph?.rich_text?.length
             ? renderRichText(block.paragraph.rich_text)
             : "\u00A0"}
@@ -106,31 +106,31 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
     case "heading_1":
       return (
-        <h1 className="text-4xl font-bold mb-6 mt-8 text-gray-900">
+        <h1 className="mb-6 mt-11 break-words text-4xl font-semibold leading-tight tracking-[-0.04em] text-stone-950 sm:text-5xl">
           {renderRichText(block.heading_1?.rich_text || [])}
         </h1>
       );
 
     case "heading_2":
       return (
-        <h2 className="text-2xl font-semibold mb-4 mt-6 text-gray-900">
+        <h2 className="mb-4 mt-10 break-words border-t border-black/8 pt-7 text-2xl font-semibold tracking-[-0.03em] text-stone-950 sm:text-3xl">
           {renderRichText(block.heading_2?.rich_text || [])}
         </h2>
       );
 
     case "heading_3":
       return (
-        <h3 className="text-xl font-medium mb-3 mt-5 text-gray-900">
+        <h3 className="mb-3 mt-8 break-words text-xl font-semibold tracking-[-0.02em] text-stone-900 sm:text-2xl">
           {renderRichText(block.heading_3?.rich_text || [])}
         </h3>
       );
 
     case "bulleted_list_item":
       return (
-        <li className="mb-2 ml-6 list-disc leading-7 text-gray-800 marker:text-gray-500">
+        <li className="mb-2 ml-6 list-disc break-words text-base leading-8 text-stone-700 marker:text-stone-400">
           {renderRichText(block.bulleted_list_item?.rich_text || [])}
           {block.children && (
-            <ul className="mt-2 border-l border-gray-200 pl-4">
+            <ul className="mt-2 border-l border-stone-200 pl-4">
               {block.children.map((child: Block) => (
                 <BlockRenderer key={child.id} block={child} />
               ))}
@@ -141,10 +141,10 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
     case "numbered_list_item":
       return (
-        <li className="mb-2 ml-6 list-decimal leading-7 text-gray-800 marker:text-gray-500">
+        <li className="mb-2 ml-6 list-decimal break-words text-base leading-8 text-stone-700 marker:text-stone-400">
           {renderRichText(block.numbered_list_item?.rich_text || [])}
           {block.children && (
-            <ol className="mt-2 border-l border-gray-200 pl-4">
+            <ol className="mt-2 border-l border-stone-200 pl-4">
               {block.children.map((child: Block) => (
                 <BlockRenderer key={child.id} block={child} />
               ))}
@@ -155,14 +155,14 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
     case "to_do":
       return (
-        <div className="flex items-start gap-2 mb-2">
+        <div className="mb-2 flex items-start gap-3">
           <input
             type="checkbox"
             checked={block.to_do?.checked}
             readOnly
-            className="mt-1.5 w-4 h-4"
+            className="mt-1.5 h-4 w-4 rounded border-stone-300"
           />
-          <span className={block.to_do?.checked ? "line-through text-gray-500" : "text-gray-800"}>
+          <span className={block.to_do?.checked ? "line-through text-stone-400" : "text-stone-700"}>
             {renderRichText(block.to_do?.rich_text || [])}
           </span>
         </div>
@@ -170,16 +170,16 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
     case "quote":
       return (
-        <blockquote className="my-5 rounded-r-lg border-l-4 border-slate-300 bg-slate-50/80 px-4 py-3 text-gray-700 italic leading-7">
+        <blockquote className="my-6 rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4 text-stone-700 italic leading-8">
           {renderRichText(block.quote?.rich_text || [])}
         </blockquote>
       );
 
     case "callout":
       return (
-        <div className="my-5 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <div className="my-6 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50/85 p-4">
           <span className="mt-2 inline-block h-2 w-2 rounded-full bg-amber-500" />
-          <div className="text-gray-800">
+          <div className="break-words text-stone-800">
             {renderRichText(block.callout?.rich_text || [])}
           </div>
         </div>
@@ -189,7 +189,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       const codeContent = toPlainText(block.code?.rich_text);
 
       return (
-        <pre className="my-5 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 p-4 text-slate-100 shadow-sm">
+        <pre className="my-6 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-slate-100 shadow-sm sm:p-5">
           <code className="text-sm leading-6 font-mono whitespace-pre-wrap">
             {codeContent || " "}
           </code>
@@ -198,8 +198,8 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
     case "toggle":
       return (
-        <details className="my-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <summary className="cursor-pointer font-medium text-gray-900">
+        <details className="my-5 rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3">
+          <summary className="cursor-pointer font-medium text-stone-900">
             {renderRichText(block.toggle?.rich_text || [])}
           </summary>
           {block.children?.length > 0 && (
@@ -214,7 +214,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
     case "table":
       return (
-        <div className="my-6 overflow-x-auto rounded-lg border border-gray-200">
+        <div className="my-6 overflow-x-auto rounded-xl border border-stone-200 bg-white">
           <table className="min-w-full border-collapse text-left text-sm">
             <tbody>
               {(block.children || []).map((row: Block) => {
@@ -223,9 +223,9 @@ export function BlockRenderer({ block }: BlockRendererProps) {
                 }
 
                 return (
-                  <tr key={row.id} className="border-b border-gray-100 last:border-b-0">
+                  <tr key={row.id} className="border-b border-stone-100 last:border-b-0">
                     {(row.table_row?.cells || []).map((cell: RichText[], index: number) => (
-                      <td key={`${row.id}-${index}`} className="px-3 py-2 align-top text-gray-800">
+                      <td key={`${row.id}-${index}`} className="px-3 py-2 align-top text-stone-700">
                         {cell.length > 0 ? renderRichText(cell) : <span>&nbsp;</span>}
                       </td>
                     ))}
@@ -263,12 +263,12 @@ export function BlockRenderer({ block }: BlockRendererProps) {
           href={block.bookmark?.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="my-4 block rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50"
+          className="my-4 block rounded-xl border border-stone-200 bg-white p-4 transition-colors hover:bg-stone-50"
         >
-          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Bookmark</div>
-          <div className="mt-1 break-all text-sm text-blue-600">{block.bookmark?.url || "Untitled bookmark"}</div>
+          <div className="text-xs font-medium uppercase tracking-wide text-stone-500">Bookmark</div>
+          <div className="mt-1 break-all text-sm text-blue-700">{block.bookmark?.url || "Untitled bookmark"}</div>
           {block.bookmark?.caption?.length > 0 && (
-            <div className="mt-2 text-sm text-gray-600">{renderRichText(block.bookmark.caption)}</div>
+            <div className="mt-2 text-sm text-stone-600">{renderRichText(block.bookmark.caption)}</div>
           )}
         </a>
       );
@@ -289,7 +289,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
               href={videoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block rounded-lg border border-gray-200 bg-gray-50 p-4 text-blue-600 hover:underline"
+              className="block rounded-xl border border-stone-200 bg-stone-50 p-4 text-blue-700 hover:underline"
             >
               Open video
             </a>
@@ -306,12 +306,12 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       }
 
       return (
-        <figure className="my-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <figure className="my-4 rounded-xl border border-stone-200 bg-stone-50 p-4">
           <a
             href={fileUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-medium text-blue-600 hover:underline"
+            className="text-sm font-medium text-blue-700 hover:underline"
           >
             Download file
           </a>
@@ -332,7 +332,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             href={pdfUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-medium text-blue-600 hover:underline"
+            className="text-sm font-medium text-blue-700 hover:underline"
           >
             Open PDF
           </a>
@@ -376,10 +376,10 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       return (
         <a
           href={linkedPagePath || "#"}
-          className="my-4 block rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50"
+          className="my-4 block rounded-xl border border-stone-200 bg-white p-4 transition-colors hover:bg-stone-50"
         >
-          <span className="text-blue-600">Linked page</span>
-          {pageId && <span className="ml-2 text-sm text-gray-400">({pageId})</span>}
+          <span className="text-blue-700">Linked page</span>
+          {pageId && <span className="ml-2 break-all text-sm text-stone-400">({pageId})</span>}
         </a>
       );
 
@@ -388,9 +388,9 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       return (
         <a
           href={childPagePath || "#"}
-          className="my-4 block rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50"
+          className="my-4 block rounded-xl border border-stone-200 bg-white p-4 transition-colors hover:bg-stone-50"
         >
-          <span className="font-medium text-gray-900">{block.child_page?.title || "Sub page"}</span>
+          <span className="break-words font-medium text-stone-900">{block.child_page?.title || "Sub page"}</span>
         </a>
       );
 
@@ -417,7 +417,7 @@ export function BlocksRenderer({ blocks }: BlocksRendererProps) {
 
     const ListTag = listType === "numbered" ? "ol" : "ul";
     result.push(
-      <ListTag key={`list-${result.length}`} className="mb-4">
+      <ListTag key={`list-${result.length}`} className="mb-5">
         {currentList.map((block) => (
           <BlockRenderer key={block.id} block={block} />
         ))}

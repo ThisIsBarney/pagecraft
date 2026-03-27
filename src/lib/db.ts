@@ -15,6 +15,8 @@ const userStore: Record<string, {
   id: string;
   email: string;
   name?: string;
+  passwordHash?: string;
+  passwordSalt?: string;
   stripeCustomerId?: string;
   subscriptionStatus: 'free' | 'active' | 'cancelled' | 'past_due';
   createdAt: string;
@@ -50,6 +52,8 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  passwordHash?: string;
+  passwordSalt?: string;
   stripeCustomerId?: string;
   subscriptionStatus: 'free' | 'active' | 'cancelled' | 'past_due';
   createdAt: string;

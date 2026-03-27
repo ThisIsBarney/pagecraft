@@ -44,6 +44,9 @@ export default function DashboardPageClient() {
   const [hiddenFromNavDrafts, setHiddenFromNavDrafts] = useState<Record<string, boolean>>({});
   const [homeDraftPageId, setHomeDraftPageId] = useState<string | null>(null);
   const [savingTemplatePageId, setSavingTemplatePageId] = useState<string | null>(null);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   const fetchSavedPages = async () => {
     setSavedPagesError("");
@@ -135,20 +138,48 @@ export default function DashboardPageClient() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError("");
     const form = e.target as HTMLFormElement;
     const email = (form.elements.namedItem("email") as HTMLInputElement).value;
     const name = (form.elements.namedItem("name") as HTMLInputElement).value;
+    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
+    const confirmPassword = (form.elements.namedItem("confirmPassword") as HTMLInputElement | null)?.value || "";
 
-    const res = await fetch("/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, name }),
-    });
+    if (password.length < 8) {
+      setAuthError("Password must be at least 8 characters.");
+      return;
+    }
 
-    if (res.ok) {
+    if (authMode === "register" && password !== confirmPassword) {
+      setAuthError("Passwords do not match.");
+      return;
+    }
+
+    setAuthSubmitting(true);
+
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: authMode,
+          email,
+          password,
+          name: authMode === "register" ? name : undefined,
+        }),
+      });
+
       const data = await res.json();
+
+      if (!res.ok) {
+        setAuthError(data?.error || "Authentication failed.");
+        return;
+      }
+
       setUser(data.user);
       window.location.reload();
+    } finally {
+      setAuthSubmitting(false);
     }
   };
 
@@ -222,8 +253,16 @@ export default function DashboardPageClient() {
     return (
       <div className="page-shell flex min-h-screen items-center justify-center px-6">
         <div className="glass-panel-strong w-full max-w-md rounded-[1.75rem] p-8">
-          <h1 className="text-2xl font-semibold tracking-[-0.04em] text-stone-950">Sign in to PageCraft</h1>
+          <h1 className="text-2xl font-semibold tracking-[-0.04em] text-stone-950">
+            {authMode === "login" ? "Sign in to PageCraft" : "Create your PageCraft account"}
+          </h1>
           <p className="mt-2 text-sm soft-text">Manage pages, domains, and publishing settings.</p>
+
+          {authError && (
+            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {authError}
+            </div>
+          )}
 
           <form onSubmit={handleLogin} className="mt-7 space-y-4">
             <div>
@@ -236,22 +275,68 @@ export default function DashboardPageClient() {
                 placeholder="you@example.com"
               />
             </div>
+            {authMode === "register" && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-stone-700">Name (optional)</label>
+                <input
+                  name="name"
+                  type="text"
+                  className="w-full rounded-xl border border-black/10 bg-white/90 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-900"
+                  placeholder="Your name"
+                />
+              </div>
+            )}
             <div>
-              <label className="mb-2 block text-sm font-medium text-stone-700">Name (optional)</label>
+              <label className="mb-2 block text-sm font-medium text-stone-700">Password</label>
               <input
-                name="name"
-                type="text"
+                name="password"
+                type="password"
+                minLength={8}
+                required
                 className="w-full rounded-xl border border-black/10 bg-white/90 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-900"
-                placeholder="Your name"
+                placeholder="At least 8 characters"
               />
             </div>
+            {authMode === "register" && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-stone-700">Confirm password</label>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  minLength={8}
+                  required
+                  className="w-full rounded-xl border border-black/10 bg-white/90 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-900"
+                  placeholder="Re-enter password"
+                />
+              </div>
+            )}
             <button
               type="submit"
-              className="w-full rounded-full bg-stone-950 py-3 text-sm font-medium text-white transition hover:bg-stone-800"
+              disabled={authSubmitting}
+              className="w-full rounded-full bg-stone-950 py-3 text-sm font-medium text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Continue
+              {authSubmitting
+                ? authMode === "login"
+                  ? "Signing in..."
+                  : "Creating account..."
+                : authMode === "login"
+                  ? "Sign in"
+                  : "Create account"}
             </button>
           </form>
+
+          <div className="mt-5 border-t border-black/8 pt-5">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode((current) => (current === "login" ? "register" : "login"));
+                setAuthError("");
+              }}
+              className="text-sm font-medium text-stone-700 underline-offset-4 hover:text-stone-950 hover:underline"
+            >
+              {authMode === "login" ? "No account yet? Create one" : "Already have an account? Sign in"}
+            </button>
+          </div>
         </div>
       </div>
     );

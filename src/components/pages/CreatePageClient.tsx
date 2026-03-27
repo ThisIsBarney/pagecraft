@@ -509,7 +509,7 @@ export default function CreatePageClient() {
                         </div>
                         <div>
                           <div className="font-medium text-slate-900">Page ID</div>
-                          <div className="font-mono">{validationResult.pageId}</div>
+                          <div className="break-all font-mono">{validationResult.pageId}</div>
                         </div>
                       </div>
                     )}
@@ -626,7 +626,7 @@ export default function CreatePageClient() {
                     <div className="mt-2 grid gap-2 sm:grid-cols-2">
                       <div>
                         <div className="font-medium">Page ID</div>
-                        <div className="font-mono">{normalizedPageId}</div>
+                        <div className="break-all font-mono">{normalizedPageId}</div>
                       </div>
                       <div>
                         <div className="font-medium">Template</div>
