@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthModal from "@/components/AuthModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -47,12 +47,25 @@ interface ValidationErrorResponse {
 
 type ValidationApiResponse = ValidationSuccessResponse | ValidationErrorResponse;
 
+const CREATE_DRAFT_STORAGE_KEY = "pagecraft:create-draft:v1";
+
 function isValidationErrorResponse(data: ValidationApiResponse): data is ValidationErrorResponse {
   return data.success === false;
 }
 
 function buildExpectedSlug(pageId: string, author: string): string {
-  return author ? `${pageId}-${author.toLowerCase().replace(/\s+/g, "-")}` : pageId;
+  if (!author.trim()) {
+    return pageId;
+  }
+
+  const normalizedAuthor = author
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return normalizedAuthor ? `${pageId}-${normalizedAuthor}` : pageId;
 }
 
 function buildExpectedPublishUrl(pageId: string, author: string, templateId: string): string {
@@ -155,11 +168,61 @@ export default function CreatePageClient() {
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [shouldSavePage, setShouldSavePage] = useState(false);
+  const [publishNotice, setPublishNotice] = useState("");
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const hasLoadedDraft = useRef(false);
   const hasPageIdInput = pageId.trim() !== "";
   const normalizedPageId = extractNotionPageId(pageId);
   const hasValidPageReference = hasPageIdInput && normalizedPageId !== null;
+
+  useEffect(() => {
+    if (hasLoadedDraft.current) {
+      return;
+    }
+
+    hasLoadedDraft.current = true;
+    const rawDraft = window.localStorage.getItem(CREATE_DRAFT_STORAGE_KEY);
+
+    if (!rawDraft) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(rawDraft) as {
+        pageId?: string;
+        author?: string;
+        selectedTemplate?: string;
+      };
+
+      if (typeof parsed.pageId === "string") {
+        setPageId(parsed.pageId);
+      }
+      if (typeof parsed.author === "string") {
+        setAuthor(parsed.author);
+      }
+      if (typeof parsed.selectedTemplate === "string") {
+        setSelectedTemplate(parsed.selectedTemplate);
+      }
+    } catch {
+      window.localStorage.removeItem(CREATE_DRAFT_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedDraft.current) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      CREATE_DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        pageId,
+        author,
+        selectedTemplate,
+      })
+    );
+  }, [pageId, author, selectedTemplate]);
 
   const validatePageAccess = async (
     cleanId: string,
@@ -216,12 +279,16 @@ export default function CreatePageClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) {
+      return;
+    }
     if (!pageId.trim()) {
       setError("Please enter a Notion page ID or full Notion page URL");
       setErrorCode("missing_input");
       return;
     }
 
+    setPublishNotice("");
     setError("");
     setErrorCode(null);
     setValidationResult(null);
@@ -273,14 +340,20 @@ export default function CreatePageClient() {
         : cleanId;
       const resolvedPageTitle = options.pageTitle?.trim() || validationResult?.title?.trim() || "Untitled";
 
+      let finalSlug = slug;
+
       if (options.saveToAccount) {
-        await savePageToUser(cleanId, slug, resolvedPageTitle);
+        const savedSlug = await savePageToUser(cleanId, slug, resolvedPageTitle);
+        if (savedSlug) {
+          finalSlug = savedSlug;
+        }
       }
 
-      router.push(`/p/${slug}?template=${selectedTemplate}`);
+      window.localStorage.removeItem(CREATE_DRAFT_STORAGE_KEY);
+      router.push(`/p/${finalSlug}?template=${selectedTemplate}`);
     } catch (error) {
       console.error("Failed to save page:", error);
-      setError("Failed to save page. Please try again.");
+      setError(error instanceof Error ? error.message : "Failed to save page. Please try again.");
       setErrorCode(null);
       setSubmissionStage("idle");
       setLoading(false);
@@ -299,9 +372,26 @@ export default function CreatePageClient() {
       }),
     });
 
+    const payload: unknown = await response.json().catch(() => null);
+
     if (!response.ok) {
-      throw new Error("Failed to save page");
+      const message =
+        payload && typeof payload === "object" && "error" in payload
+          ? String((payload as { error?: string }).error || "Failed to save page")
+          : "Failed to save page";
+      throw new Error(message);
     }
+
+    const savedSlug =
+      payload && typeof payload === "object" && "page" in payload
+        ? (payload as { page?: { slug?: string } }).page?.slug
+        : null;
+
+    if (savedSlug && savedSlug !== slug) {
+      setPublishNotice(`Slug adjusted to avoid conflict: ${savedSlug}`);
+    }
+
+    return savedSlug;
   };
 
   const handleAuthSuccess = async (user: { id: string; email: string; name: string }) => {
@@ -587,20 +677,42 @@ export default function CreatePageClient() {
                     setPageId(e.target.value);
                     setError("");
                     setErrorCode(null);
+                    setPublishNotice("");
                     setSubmissionStage("idle");
                     setValidationResult(null);
                   }}
                   placeholder="e.g., 1a2b3c4d5e6f7g8h9i0j1234567890ab or https://www.notion.so/..."
                   className="w-full rounded-2xl border border-black/10 bg-white/90 px-4 py-3 font-mono text-sm text-stone-900 outline-none transition focus:border-stone-950 focus:ring-0"
                 />
+                {publishNotice && (
+                  <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                    {publishNotice}
+                  </div>
+                )}
                 <div className="mt-2 flex items-center justify-between gap-3 text-sm">
-                  <button
-                    type="button"
-                    onClick={handlePasteFromClipboard}
-                    className="font-medium text-stone-700 underline-offset-4 hover:underline"
-                  >
-                    Paste from clipboard
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handlePasteFromClipboard}
+                      className="font-medium text-stone-700 underline-offset-4 hover:underline"
+                    >
+                      Paste from clipboard
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPageId("");
+                        setAuthor("");
+                        setPublishNotice("");
+                        setValidationResult(null);
+                        setSubmissionStage("idle");
+                        window.localStorage.removeItem(CREATE_DRAFT_STORAGE_KEY);
+                      }}
+                      className="text-xs text-stone-500 underline-offset-4 hover:underline"
+                    >
+                      Clear draft
+                    </button>
+                  </div>
                   <span
                     className={`text-xs ${
                       hasValidPageReference
@@ -653,7 +765,10 @@ export default function CreatePageClient() {
                   id={authorFieldId}
                   type="text"
                   value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
+                  onChange={(e) => {
+                    setAuthor(e.target.value);
+                    setPublishNotice("");
+                  }}
                   placeholder="e.g., Marshall WU"
                   className="w-full rounded-2xl border border-black/10 bg-white/90 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-950 focus:ring-0"
                 />

@@ -47,6 +47,12 @@ export default function DashboardPageClient() {
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const fetchSavedPages = async () => {
     setSavedPagesError("");
@@ -235,6 +241,47 @@ export default function DashboardPageClient() {
       console.error("Failed to save page template:", error);
     } finally {
       setSavingTemplatePageId((current) => (current === savedPage.id ? null : current));
+    }
+  };
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordMessage("");
+
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      const response = await fetch("/api/auth", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setPasswordError(payload?.error || "Failed to update password.");
+        return;
+      }
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setPasswordMessage("Password updated.");
+    } finally {
+      setPasswordSaving(false);
     }
   };
 
@@ -632,6 +679,57 @@ export default function DashboardPageClient() {
                   </a>
                 </li>
               </ul>
+            </section>
+
+            <section className="glass-panel-strong rounded-[1.75rem] p-6">
+              <h3 className="text-base font-semibold text-stone-950">Security</h3>
+              <p className="mt-2 text-xs soft-text">Update your account password.</p>
+              {passwordError && (
+                <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  {passwordError}
+                </div>
+              )}
+              {passwordMessage && (
+                <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                  {passwordMessage}
+                </div>
+              )}
+              <form onSubmit={handlePasswordUpdate} className="mt-3 space-y-3">
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  placeholder="Current password"
+                  className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+                  required
+                  minLength={8}
+                />
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  placeholder="New password"
+                  className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+                  required
+                  minLength={8}
+                />
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(event) => setConfirmNewPassword(event.target.value)}
+                  placeholder="Confirm new password"
+                  className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+                  required
+                  minLength={8}
+                />
+                <button
+                  type="submit"
+                  disabled={passwordSaving}
+                  className="w-full rounded-full border border-black/12 bg-white py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {passwordSaving ? "Updating..." : "Update password"}
+                </button>
+              </form>
             </section>
           </div>
         </div>

@@ -8,6 +8,39 @@ type PageStructureSettings = {
   isHome?: boolean;
 };
 
+function sanitizeSlug(value: string | undefined, fallback: string) {
+  const source = (value || fallback || "").trim().toLowerCase();
+  const sanitized = source
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return sanitized || fallback;
+}
+
+function ensureUniqueSlug(
+  pages: Array<{ id: string; slug: string }>,
+  desiredSlug: string,
+  excludePageId?: string
+) {
+  const reserved = new Set(
+    pages
+      .filter((page) => page.id !== excludePageId)
+      .map((page) => (page.slug || "").toLowerCase())
+  );
+
+  if (!reserved.has(desiredSlug.toLowerCase())) {
+    return desiredSlug;
+  }
+
+  let index = 2;
+  while (reserved.has(`${desiredSlug}-${index}`.toLowerCase())) {
+    index += 1;
+  }
+
+  return `${desiredSlug}-${index}`;
+}
+
 function normalizeSettings(input: unknown): PageStructureSettings {
   if (!input || typeof input !== "object") {
     return {};
@@ -53,6 +86,8 @@ export async function POST(request: NextRequest) {
     const existingPage = existingPages.find((p) => p.notionPageId === notionPageId);
 
     if (existingPage) {
+      const candidateSlug = sanitizeSlug(slug || existingPage.slug, existingPage.notionPageId);
+      const uniqueSlug = ensureUniqueSlug(existingPages, candidateSlug, existingPage.id);
       const mergedSettings = {
         ...(existingPage.settings || {}),
         ...normalizedSettings,
@@ -79,7 +114,7 @@ export async function POST(request: NextRequest) {
       const updatedPage = {
         ...existingPage,
         title,
-        slug: slug || existingPage.slug,
+        slug: uniqueSlug,
         template: template || existingPage.template,
         settings: mergedSettings,
         updatedAt: new Date().toISOString(),
@@ -118,12 +153,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const candidateSlug = sanitizeSlug(slug, notionPageId);
+    const uniqueSlug = ensureUniqueSlug(existingPages, candidateSlug);
+
     const newPage = {
       id: pageId,
       userId: user.id,
       notionPageId,
       title,
-      slug: slug || notionPageId,
+      slug: uniqueSlug,
       template: template || "minimal",
       settings: nextSettings,
       createdAt: new Date().toISOString(),
