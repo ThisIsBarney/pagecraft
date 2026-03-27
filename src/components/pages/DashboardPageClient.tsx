@@ -55,6 +55,7 @@ export default function DashboardPageClient() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const fetchSavedPages = async () => {
     setSavedPagesError("");
@@ -365,6 +366,33 @@ export default function DashboardPageClient() {
     }
   };
 
+  const handleLogout = async () => {
+    if (loggingOut) {
+      return;
+    }
+
+    setLoggingOut(true);
+    try {
+      const response = await fetch("/api/auth", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
+
+      setUser(null);
+      setSites([]);
+      setSavedPages([]);
+      window.location.href = "/dashboard";
+    } catch (error) {
+      console.error("Failed to logout:", error);
+      setAuthError("Unable to sign out right now.");
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-shell flex min-h-screen items-center justify-center px-6">
@@ -540,6 +568,14 @@ export default function DashboardPageClient() {
             >
               {isPro ? "Pro" : "Free"}
             </span>
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:text-stone-950 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loggingOut ? "Signing out..." : "Logout"}
+            </button>
           </div>
         </div>
       </header>
