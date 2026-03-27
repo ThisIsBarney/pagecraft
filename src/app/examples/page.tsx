@@ -271,89 +271,102 @@ const sampleDatabaseContent: PageContent = {
 };
 
 export default function ExamplePage() {
+  const templateSections = [
+    {
+      id: "minimal",
+      title: "Minimal",
+      description: "Clean and editorial. Great for writing-focused pages.",
+      previewHref: "/p/demo-minimal?template=minimal",
+      content: <MinimalTemplate content={samplePageContent} author="Marshall WU" />,
+    },
+    {
+      id: "designer",
+      title: "Designer",
+      description: "Bold visual direction for portfolio and creative work.",
+      previewHref: "/p/demo-designer?template=designer",
+      content: <DesignerTemplate content={samplePageContent} author="Marshall WU" />,
+    },
+    {
+      id: "developer",
+      title: "Developer",
+      description: "Structured style tailored for technical writing.",
+      previewHref: "/p/demo-developer?template=developer",
+      content: <DeveloperTemplate content={samplePageContent} author="Marshall WU" />,
+    },
+    {
+      id: "creator",
+      title: "Creator",
+      description: "Warm editorial tone for updates, essays, and newsletters.",
+      previewHref: "/p/demo-creator?template=creator",
+      content: <CreatorTemplate content={samplePageContent} author="Marshall WU" />,
+    },
+    {
+      id: "database",
+      title: "Database",
+      description: "Auto-selected for Notion databases and collections.",
+      previewHref: "",
+      content: <DatabaseTemplate content={sampleDatabaseContent} author="Marshall WU" />,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white border-b sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Template Gallery</h1>
-            <a href="/create" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-              Create Your Site →
-            </a>
-          </div>
+    <div className="page-shell min-h-screen">
+      <header className="sticky top-0 z-30 border-b border-black/8 bg-white/60 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5 lg:px-8">
+          <a href="/" className="flex items-center gap-3 text-stone-950">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-950 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+              PC
+            </span>
+            <span>
+              <span className="block text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">PageCraft</span>
+              <span className="block text-sm soft-text">Template gallery</span>
+            </span>
+          </a>
+          <a
+            href="/create"
+            className="rounded-full bg-stone-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-800"
+          >
+            Create site
+          </a>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-12 space-y-16">
-        {/* Minimal Template */}
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold">Minimal</h2>
-              <p className="text-gray-600">Clean, simple, professional. Perfect for blogs and resumes.</p>
-            </div>
-            <a href="/p/demo-minimal?template=minimal" className="text-blue-600 hover:underline">Preview →</a>
-          </div>
-          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
-            <MinimalTemplate content={samplePageContent} author="Marshall WU" />
-          </div>
-        </section>
+      <main className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
+        <div className="mb-8 max-w-3xl">
+          <div className="eyebrow">Template previews</div>
+          <h1 className="mt-4 text-4xl font-semibold tracking-[-0.06em] text-stone-950 sm:text-5xl">
+            Pick the visual direction before publishing.
+          </h1>
+          <p className="mt-3 text-sm leading-7 soft-text sm:text-base">
+            Each template uses the same Notion content model, so you can switch tone without restructuring your page.
+          </p>
+        </div>
 
-        {/* Designer Template */}
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold">Designer</h2>
-              <p className="text-gray-600">Bold, creative, dark mode. For portfolios and creative work.</p>
-            </div>
-            <a href="/p/demo-designer?template=designer" className="text-blue-600 hover:underline">Preview →</a>
-          </div>
-          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
-            <DesignerTemplate content={samplePageContent} author="Marshall WU" />
-          </div>
-        </section>
-
-        {/* Developer Template */}
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold">Developer</h2>
-              <p className="text-gray-600">VS Code style. Perfect for dev blogs and documentation.</p>
-            </div>
-            <a href="/p/demo-developer?template=developer" className="text-blue-600 hover:underline">Preview →</a>
-          </div>
-          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
-            <DeveloperTemplate content={samplePageContent} author="Marshall WU" />
-          </div>
-        </section>
-
-        {/* Creator Template */}
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold">Creator</h2>
-              <p className="text-gray-600">Warm editorial style for newsletters, essays, and creator updates.</p>
-            </div>
-            <a href="/p/demo-creator?template=creator" className="text-blue-600 hover:underline">Preview →</a>
-          </div>
-          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
-            <CreatorTemplate content={samplePageContent} author="Marshall WU" />
-          </div>
-        </section>
-
-        {/* Database Template */}
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold">Database</h2>
-              <p className="text-gray-600">Card layout for Notion databases. Great for portfolios and collections.</p>
-            </div>
-            <span className="text-gray-400">Auto-selected for databases</span>
-          </div>
-          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-lg">
-            <DatabaseTemplate content={sampleDatabaseContent} author="Marshall WU" />
-          </div>
-        </section>
+        <div className="space-y-12">
+          {templateSections.map((section) => (
+            <section key={section.id} className="glass-panel-strong overflow-hidden rounded-[1.75rem]">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/8 px-6 py-5">
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-[-0.04em] text-stone-950">{section.title}</h2>
+                  <p className="mt-1 text-sm soft-text">{section.description}</p>
+                </div>
+                {section.previewHref ? (
+                  <a
+                    href={section.previewHref}
+                    className="rounded-full border border-black/12 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+                  >
+                    Open preview
+                  </a>
+                ) : (
+                  <span className="rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-medium uppercase tracking-[0.12em] text-stone-500">
+                    Auto selected
+                  </span>
+                )}
+              </div>
+              <div className="border-t border-black/4">{section.content}</div>
+            </section>
+          ))}
+        </div>
       </main>
     </div>
   );

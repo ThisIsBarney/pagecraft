@@ -30,15 +30,15 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
           <div className="text-xs text-[#858585] uppercase tracking-wider mb-3">Explorer</div>
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-sm text-[#d4d4d4] hover:bg-[#2a2d2e] px-2 py-1 rounded cursor-pointer">
-              <span className="text-[#519aba]">📄</span>
+              <span className="inline-block h-2 w-2 rounded-full bg-[#519aba]" />
               <span>README.md</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-[#d4d4d4] hover:bg-[#2a2d2e] px-2 py-1 rounded cursor-pointer">
-              <span className="text-[#f1e05a]">⚡</span>
+              <span className="inline-block h-2 w-2 rounded-full bg-[#f1e05a]" />
               <span>projects.json</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-[#d4d4d4] hover:bg-[#2a2d2e] px-2 py-1 rounded cursor-pointer">
-              <span className="text-[#e34c26]">🔧</span>
+              <span className="inline-block h-2 w-2 rounded-full bg-[#e34c26]" />
               <span>config.yml</span>
             </div>
           </div>
@@ -71,14 +71,14 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
           {/* Terminal-style footer */}
           <div className="mt-12 sm:mt-16 p-4 bg-[#252526] rounded-lg border border-[#3e3e42]">
             <div className="flex items-center gap-2 text-xs text-[#858585] mb-2">
-              <span className="text-[#27ca40]">➜</span>
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#27ca40]" />
               <span>~</span>
               <span className="text-[#d4d4d4]">git status</span>
             </div>
             <div className="text-sm text-[#d4d4d4]">
-              <span className="text-[#27ca40]">✓</span> Built with PageCraft
+              <span className="text-[#27ca40]">Built with PageCraft</span>
               <br />
-              <span className="text-[#858585]">→ Deployed to production</span>
+              <span className="text-[#858585]">Deployed to production</span>
             </div>
           </div>
         </main>
@@ -88,7 +88,7 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
       <footer className="sticky bottom-0 left-0 right-0 bg-[#007acc] text-white text-[11px] sm:text-xs py-1 px-3 sm:px-4">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-1 sm:gap-0 items-start sm:items-center justify-between">
           <div className="flex items-center gap-4">
-            <span>🌿 main</span>
+            <span>main</span>
             <span>0 errors, 0 warnings</span>
           </div>
           <div className="flex items-center gap-3 sm:gap-4 flex-wrap">

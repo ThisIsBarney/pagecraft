@@ -141,7 +141,7 @@ export function DatabaseTemplate({ content, author }: DatabaseTemplateProps) {
         {/* Empty State */}
         {databaseEntries.length === 0 && (
           <div className="text-center py-14 sm:py-20">
-            <div className="text-6xl mb-4">📭</div>
+            <div className="mx-auto mb-4 h-12 w-12 rounded-full border border-gray-300 bg-gray-100" />
             <h3 className="text-xl font-medium text-gray-900 mb-2">No entries yet</h3>
             <p className="text-gray-600">
               This database is empty. Add some entries in Notion to see them here.

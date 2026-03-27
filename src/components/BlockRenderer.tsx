@@ -178,7 +178,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
     case "callout":
       return (
         <div className="my-5 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <span className="text-lg leading-none">{block.callout?.icon?.emoji || "💡"}</span>
+          <span className="mt-2 inline-block h-2 w-2 rounded-full bg-amber-500" />
           <div className="text-gray-800">
             {renderRichText(block.callout?.rich_text || [])}
           </div>
@@ -378,7 +378,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
           href={linkedPagePath || "#"}
           className="my-4 block rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50"
         >
-          <span className="text-blue-600">→ Linked page</span>
+          <span className="text-blue-600">Linked page</span>
           {pageId && <span className="ml-2 text-sm text-gray-400">({pageId})</span>}
         </a>
       );
@@ -390,7 +390,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
           href={childPagePath || "#"}
           className="my-4 block rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50"
         >
-          <span className="font-medium text-gray-900">📄 {block.child_page?.title || "Sub page"}</span>
+          <span className="font-medium text-gray-900">{block.child_page?.title || "Sub page"}</span>
         </a>
       );
 
