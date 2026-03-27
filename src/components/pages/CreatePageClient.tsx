@@ -7,10 +7,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { extractNotionPageId } from "@/lib/notion-input";
 
 const templates = [
-  { id: "minimal", name: "Minimal", description: "Clean and simple", color: "bg-white" },
-  { id: "designer", name: "Designer", description: "Bold and creative", color: "bg-gradient-to-br from-violet-500 to-fuchsia-500" },
-  { id: "developer", name: "Developer", description: "Code editor style", color: "bg-[#1e1e1e]" },
-  { id: "creator", name: "Creator", description: "Warm editorial showcase", color: "bg-gradient-to-br from-amber-200 via-rose-200 to-white" },
+  { id: "minimal", name: "Minimal", description: "Quiet and editorial", color: "bg-[linear-gradient(180deg,#ffffff_0%,#f4f1ea_100%)]" },
+  { id: "designer", name: "Designer", description: "Bold and expressive", color: "bg-[radial-gradient(circle_at_top_left,#f5d0fe_0%,#fb7185_35%,#111827_100%)]" },
+  { id: "developer", name: "Developer", description: "Structured and technical", color: "bg-[linear-gradient(135deg,#111827_0%,#0f172a_55%,#1f2937_100%)]" },
+  { id: "creator", name: "Creator", description: "Warm editorial showcase", color: "bg-[linear-gradient(135deg,#f6e7cb_0%,#f7d7d0_45%,#fffaf5_100%)]" },
 ];
 
 type SubmissionStage = "idle" | "validating" | "awaiting-auth" | "saving";
@@ -384,298 +384,382 @@ export default function CreatePageClient() {
     : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="max-w-3xl mx-auto px-6 py-4">
-          <a href="/" className="text-xl font-bold flex items-center gap-2">
-            <span>🦾</span> PageCraft
-          </a>
-        </div>
+    <div className="page-shell">
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="bg-grid absolute inset-0 opacity-40" />
+        <div className="absolute left-[8%] top-16 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(217,119,87,0.16),transparent_65%)] blur-3xl" />
+        <div className="absolute right-[10%] top-10 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(120,154,190,0.16),transparent_68%)] blur-3xl" />
+      </div>
+
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 lg:px-8">
+        <a href="/" className="flex items-center gap-3 text-stone-950">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-stone-950 text-sm font-semibold text-white shadow-[0_18px_50px_rgba(24,21,18,0.18)]">
+            PC
+          </span>
+          <span>
+            <span className="block text-sm font-semibold uppercase tracking-[0.22em] text-stone-500">
+              PageCraft
+            </span>
+            <span className="block text-sm soft-text">Publishing flow</span>
+          </span>
+        </a>
       </header>
 
-      <main className="max-w-xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-2xl shadow-sm border p-8">
-          <h1 className="text-2xl font-bold mb-2">Create your site</h1>
-          <p className="text-gray-600 mb-8">
-            Choose a template and enter your Notion page ID or paste the full page URL.
+      <main className="mx-auto max-w-6xl px-6 pb-16 pt-6 lg:px-8">
+        <div className="mb-8 max-w-2xl">
+          <div className="eyebrow">Create a site</div>
+          <h1 className="mt-5 text-balance text-5xl font-semibold tracking-[-0.07em] text-stone-950 sm:text-6xl">
+            Publish from Notion with a calmer setup flow.
+          </h1>
+          <p className="mt-4 text-base leading-8 soft-text sm:text-lg">
+            Paste the page, choose a direction, review the URL, and publish without fighting
+            a noisy dashboard.
           </p>
+        </div>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm whitespace-pre-line">
-              <div className="font-medium mb-1">⚠️ Unable to create site</div>
-              {error}
-              <div className="mt-3 pt-3 border-t border-red-200 text-xs text-red-600">
-                <div className="font-medium">Tips:</div>
-                <ul className="list-disc pl-4 mt-1 space-y-1">
-                  {errorTips.map((tip) => (
-                    <li key={tip}>{tip}</li>
-                  ))}
-                </ul>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={handleRetryValidation}
-                    className="rounded-full border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
-                  >
-                    Retry validation
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setError("");
-                      setErrorCode(null);
-                      setSubmissionStage("idle");
-                    }}
-                    className="text-xs font-medium text-red-700 underline"
-                  >
-                    Dismiss
-                  </button>
+        <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
+          <section className="glass-panel rounded-[2rem] p-7 sm:p-8">
+            <div className="mb-8 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-[1.5rem] border border-black/6 bg-[linear-gradient(180deg,#fffcf7_0%,#f4ece2_100%)] p-5">
+                <div className="text-xs uppercase tracking-[0.16em] text-stone-500">Step 1</div>
+                <div className="mt-3 text-base font-medium text-stone-950">Paste the source</div>
+                <div className="mt-2 text-sm leading-6 soft-text">
+                  Use a page ID or share URL. Validation happens before anything is saved.
+                </div>
+              </div>
+              <div className="rounded-[1.5rem] border border-black/6 bg-white/90 p-5">
+                <div className="text-xs uppercase tracking-[0.16em] text-stone-500">Step 2</div>
+                <div className="mt-3 text-base font-medium text-stone-950">Pick the mood</div>
+                <div className="mt-2 text-sm leading-6 soft-text">
+                  Switch visual tone without changing your content structure.
+                </div>
+              </div>
+              <div className="rounded-[1.5rem] bg-stone-950 p-5 text-white">
+                <div className="text-xs uppercase tracking-[0.16em] text-stone-400">Step 3</div>
+                <div className="mt-3 text-base font-medium">Generate the site</div>
+                <div className="mt-2 text-sm leading-6 text-stone-300">
+                  Save it to your account now and connect a domain later.
                 </div>
               </div>
             </div>
-          )}
 
-          {(loading || submissionStage === "awaiting-auth" || validationResult) && (
-            <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-blue-950">
-              <div className="flex items-start gap-3">
-                <div
-                  className={`mt-0.5 h-2.5 w-2.5 rounded-full ${
-                    loading ? "animate-pulse bg-blue-500" : "bg-emerald-500"
-                  }`}
-                />
-                <div className="flex-1">
-                  <div className="font-medium">
-                    {loading ? stageLabel : validationResult ? "Ready to publish" : stageLabel}
+            {error && (
+              <div className="mb-6 rounded-[1.5rem] border border-red-200 bg-red-50/90 p-5 text-sm text-red-800 whitespace-pre-line">
+                <div className="mb-1 font-medium">Unable to create site</div>
+                {error}
+                <div className="mt-3 border-t border-red-200 pt-3 text-xs text-red-700">
+                  <div className="font-medium">Tips</div>
+                  <ul className="mt-1 list-disc space-y-1 pl-4">
+                    {errorTips.map((tip) => (
+                      <li key={tip}>{tip}</li>
+                    ))}
+                  </ul>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleRetryValidation}
+                      className="rounded-full border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                    >
+                      Retry validation
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setError("");
+                        setErrorCode(null);
+                        setSubmissionStage("idle");
+                      }}
+                      className="text-xs font-medium text-red-700 underline"
+                    >
+                      Dismiss
+                    </button>
                   </div>
-                  <div className="mt-1 text-blue-800">
-                    {loading
-                      ? "PageCraft is validating your Notion content and preparing the site configuration."
-                      : validationResult
-                        ? `${validationResult.type === "database" ? "Database" : "Page"}: ${validationResult.title}`
-                        : "Continue to the next step to publish your site."}
-                  </div>
-                  {validationResult && (
-                    <div className="mt-3 grid gap-2 rounded-lg bg-white/80 p-3 text-xs text-slate-700 sm:grid-cols-3">
-                      <div>
-                        <div className="font-medium text-slate-900">Content</div>
-                        <div>{validationResult.type}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-slate-900">Template</div>
-                        <div>{templates.find((template) => template.id === selectedTemplate)?.name}</div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-slate-900">Page ID</div>
-                        <div className="font-mono">{validationResult.pageId}</div>
-                      </div>
-                    </div>
-                  )}
-                  {validationResult?.unsupportedBlockTypes &&
-                    validationResult.unsupportedBlockTypes.length > 0 && (
-                      <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                        <div className="font-medium">Compatibility note</div>
-                        <div className="mt-1">
-                          This page includes block types that currently use fallback rendering: {" "}
-                          <span className="font-mono">
-                            {validationResult.unsupportedBlockTypes.join(", ")}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  {validationResult?.pageStructure && validationResult.pageStructure.length > 0 && (
-                    <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
-                      <div className="font-medium text-slate-900">Page structure preview</div>
-                      <ul className="mt-2 space-y-1">
-                        {validationResult.pageStructure.slice(0, 6).map((item) => (
-                          <li key={item.id} className="flex items-start gap-2">
-                            <span className="mt-[3px] inline-block h-1.5 w-1.5 rounded-full bg-slate-400" />
-                            <span className="flex-1">{item.title}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      {validationResult.pageStructure.length > 6 && (
-                        <div className="mt-2 text-slate-500">
-                          +{validationResult.pageStructure.length - 6} more pages
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Template Selection */}
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Choose a template
-            </label>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {templates.map((template) => (
-                <button
-                  key={template.id}
-                  type="button"
-                  onClick={() => setSelectedTemplate(template.id)}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
-                    selectedTemplate === template.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <div className={`w-full h-16 rounded-lg mb-3 ${template.color} ${template.id === "developer" ? "border border-gray-600" : ""}`} />
-                  <div className="font-medium text-sm">{template.name}</div>
-                  <div className="text-xs text-gray-500">{template.description}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label
-                htmlFor={pageIdFieldId}
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Notion page ID or URL
-              </label>
-              <input
-                id={pageIdFieldId}
-                type="text"
-                value={pageId}
-                onChange={(e) => {
-                  setPageId(e.target.value);
-                  setError("");
-                  setErrorCode(null);
-                  setSubmissionStage("idle");
-                  setValidationResult(null);
-                }}
-                placeholder="e.g., 1a2b3c4d5e6f7g8h9i0j1234567890ab or https://www.notion.so/..."
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-              />
-              <div className="mt-2 flex items-center justify-between gap-3 text-sm">
-                <button
-                  type="button"
-                  onClick={handlePasteFromClipboard}
-                  className="text-blue-600 hover:underline"
-                >
-                  Paste from clipboard
-                </button>
-                <span
-                  className={`text-xs ${
-                    hasValidPageReference
-                      ? "text-emerald-600"
-                      : hasPageIdInput
-                        ? "text-red-600"
-                        : "text-gray-500"
-                  }`}
-                >
-                  {hasValidPageReference
-                    ? `Detected page ID: ${normalizedPageId}`
-                    : hasPageIdInput
-                      ? "Paste a 32-character page ID or a full Notion share URL"
-                      : "We accept either a raw page ID or a Notion share URL"}
-                </span>
-              </div>
-              {hasValidPageReference && (
-                <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/80 p-3 text-xs text-emerald-900">
-                  <div className="font-medium">Ready to validate</div>
-                  <div className="mt-1">
-                    PageCraft will check this Notion content before generating your site.
-                  </div>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <div>
-                      <div className="font-medium">Page ID</div>
-                      <div className="font-mono">{normalizedPageId}</div>
-                    </div>
-                    <div>
-                      <div className="font-medium">Template</div>
-                      <div>
-                        {templates.find((template) => template.id === selectedTemplate)?.name}
-                      </div>
-                    </div>
-                  </div>
-                  {expectedPublishUrl && (
-                    <div className="mt-3 border-t border-emerald-100 pt-2">
-                      <div className="font-medium">Expected URL</div>
-                      <div className="font-mono text-[11px] sm:text-xs break-all">{expectedPublishUrl}</div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor={authorFieldId}
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Your Name (optional)
-              </label>
-              <input
-                id={authorFieldId}
-                type="text"
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                placeholder="e.g., Marshall WU"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            {expectedPublishUrl && (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs sm:text-sm text-gray-700">
-                <div className="font-medium text-gray-900">Publish URL preview</div>
-                <div className="mt-1 font-mono break-all">{expectedPublishUrl}</div>
               </div>
             )}
 
-            {/* Auth Status */}
-            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-sm text-gray-900">
-                    {isAuthenticated ? `Signed in as ${user?.email}` : "Not signed in"}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {isAuthenticated
-                      ? "Your page will be saved to your account"
-                      : "Sign in to save this page and access it later"
-                    }
+            {(loading || submissionStage === "awaiting-auth" || validationResult) && (
+              <div className="mb-6 rounded-[1.5rem] border border-black/6 bg-white/90 p-5 text-sm text-stone-900">
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`mt-1 h-2.5 w-2.5 rounded-full ${
+                      loading ? "animate-pulse bg-stone-950" : "bg-emerald-500"
+                    }`}
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">
+                      {loading ? stageLabel : validationResult ? "Ready to publish" : stageLabel}
+                    </div>
+                    <div className="mt-1 soft-text">
+                      {loading
+                        ? "PageCraft is validating your Notion content and preparing the site configuration."
+                        : validationResult
+                          ? `${validationResult.type === "database" ? "Database" : "Page"}: ${validationResult.title}`
+                          : "Continue to the next step to publish your site."}
+                    </div>
+                    {validationResult && (
+                      <div className="mt-3 grid gap-2 rounded-[1rem] bg-stone-50 p-3 text-xs text-slate-700 sm:grid-cols-3">
+                        <div>
+                          <div className="font-medium text-slate-900">Content</div>
+                          <div>{validationResult.type}</div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-slate-900">Template</div>
+                          <div>{templates.find((template) => template.id === selectedTemplate)?.name}</div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-slate-900">Page ID</div>
+                          <div className="font-mono">{validationResult.pageId}</div>
+                        </div>
+                      </div>
+                    )}
+                    {validationResult?.unsupportedBlockTypes &&
+                      validationResult.unsupportedBlockTypes.length > 0 && (
+                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                          <div className="font-medium">Compatibility note</div>
+                          <div className="mt-1">
+                            This page includes block types that currently use fallback rendering:{" "}
+                            <span className="font-mono">
+                              {validationResult.unsupportedBlockTypes.join(", ")}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    {validationResult?.pageStructure && validationResult.pageStructure.length > 0 && (
+                      <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                        <div className="font-medium text-slate-900">Page structure preview</div>
+                        <ul className="mt-2 space-y-1">
+                          {validationResult.pageStructure.slice(0, 6).map((item) => (
+                            <li key={item.id} className="flex items-start gap-2">
+                              <span className="mt-[3px] inline-block h-1.5 w-1.5 rounded-full bg-slate-400" />
+                              <span className="flex-1">{item.title}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        {validationResult.pageStructure.length > 6 && (
+                          <div className="mt-2 text-slate-500">
+                            +{validationResult.pageStructure.length - 6} more pages
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
-                {!isAuthenticated && (
+              </div>
+            )}
+
+            <div className="mb-8">
+              <label className="mb-3 block text-sm font-medium text-stone-700">Choose a template</label>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {templates.map((template) => (
                   <button
+                    key={template.id}
                     type="button"
-                    onClick={() => setShowAuthModal(true)}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                    onClick={() => setSelectedTemplate(template.id)}
+                    className={`rounded-[1.35rem] border p-4 text-left transition-all ${
+                      selectedTemplate === template.id
+                        ? "border-stone-950 bg-stone-50 shadow-[0_18px_40px_rgba(24,21,18,0.08)]"
+                        : "border-black/8 bg-white/80 hover:border-stone-400"
+                    }`}
                   >
-                    Sign in
+                    <div
+                      className={`mb-3 h-16 w-full rounded-xl ${template.color} ${
+                        template.id === "developer" ? "border border-stone-700" : "border border-black/5"
+                      }`}
+                    />
+                    <div className="text-sm font-medium">{template.name}</div>
+                    <div className="text-xs soft-text">{template.description}</div>
                   </button>
-                )}
+                ))}
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {isAuthenticated ? "Validating and generating..." : "Validating..."}
-                </>
-              ) : (
-                <>
-                  {isAuthenticated ? "Generate & Save →" : "Generate Site →"}
-                  {!isAuthenticated && (
-                    <span className="text-xs bg-blue-800 text-white px-2 py-1 rounded-full">
-                      Free
-                    </span>
-                  )}
-                </>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor={pageIdFieldId} className="mb-2 block text-sm font-medium text-stone-700">
+                  Notion page ID or URL
+                </label>
+                <input
+                  id={pageIdFieldId}
+                  type="text"
+                  value={pageId}
+                  onChange={(e) => {
+                    setPageId(e.target.value);
+                    setError("");
+                    setErrorCode(null);
+                    setSubmissionStage("idle");
+                    setValidationResult(null);
+                  }}
+                  placeholder="e.g., 1a2b3c4d5e6f7g8h9i0j1234567890ab or https://www.notion.so/..."
+                  className="w-full rounded-2xl border border-black/10 bg-white/90 px-4 py-3 font-mono text-sm text-stone-900 outline-none transition focus:border-stone-950 focus:ring-0"
+                />
+                <div className="mt-2 flex items-center justify-between gap-3 text-sm">
+                  <button
+                    type="button"
+                    onClick={handlePasteFromClipboard}
+                    className="font-medium text-stone-700 underline-offset-4 hover:underline"
+                  >
+                    Paste from clipboard
+                  </button>
+                  <span
+                    className={`text-xs ${
+                      hasValidPageReference
+                        ? "text-emerald-700"
+                        : hasPageIdInput
+                          ? "text-red-700"
+                          : "text-stone-500"
+                    }`}
+                  >
+                    {hasValidPageReference
+                      ? `Detected page ID: ${normalizedPageId}`
+                      : hasPageIdInput
+                        ? "Paste a 32-character page ID or a full Notion share URL"
+                        : "We accept either a raw page ID or a Notion share URL"}
+                  </span>
+                </div>
+                {hasValidPageReference && (
+                  <div className="mt-3 rounded-[1.25rem] border border-emerald-200 bg-emerald-50/80 p-4 text-xs text-emerald-950">
+                    <div className="font-medium">Ready to validate</div>
+                    <div className="mt-1">
+                      PageCraft will check this Notion content before generating your site.
+                    </div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      <div>
+                        <div className="font-medium">Page ID</div>
+                        <div className="font-mono">{normalizedPageId}</div>
+                      </div>
+                      <div>
+                        <div className="font-medium">Template</div>
+                        <div>
+                          {templates.find((template) => template.id === selectedTemplate)?.name}
+                        </div>
+                      </div>
+                    </div>
+                    {expectedPublishUrl && (
+                      <div className="mt-3 border-t border-emerald-100 pt-2">
+                        <div className="font-medium">Expected URL</div>
+                        <div className="font-mono text-[11px] break-all sm:text-xs">{expectedPublishUrl}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor={authorFieldId} className="mb-2 block text-sm font-medium text-stone-700">
+                  Your name (optional)
+                </label>
+                <input
+                  id={authorFieldId}
+                  type="text"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder="e.g., Marshall WU"
+                  className="w-full rounded-2xl border border-black/10 bg-white/90 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-950 focus:ring-0"
+                />
+              </div>
+
+              {expectedPublishUrl && (
+                <div className="rounded-[1.25rem] border border-black/8 bg-stone-50/90 p-4 text-xs text-stone-700 sm:text-sm">
+                  <div className="font-medium text-gray-900">Publish URL preview</div>
+                  <div className="mt-1 break-all font-mono">{expectedPublishUrl}</div>
+                </div>
               )}
-            </button>
-          </form>
+
+              <div className="rounded-[1.25rem] border border-black/8 bg-white/80 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-stone-950">
+                      {isAuthenticated ? `Signed in as ${user?.email}` : "Not signed in"}
+                    </div>
+                    <div className="mt-1 text-xs soft-text">
+                      {isAuthenticated
+                        ? "Your page will be saved to your account"
+                        : "Sign in to save this page and access it later"}
+                    </div>
+                  </div>
+                  {!isAuthenticated && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAuthModal(true)}
+                      className="text-sm font-medium text-stone-700 transition hover:text-stone-950"
+                    >
+                      Sign in
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-stone-950 py-3.5 text-sm font-medium text-white shadow-[0_20px_50px_rgba(24,21,18,0.22)] transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    {isAuthenticated ? "Validating and generating..." : "Validating..."}
+                  </>
+                ) : (
+                  <>
+                    {isAuthenticated ? "Generate & Save" : "Generate Site"}
+                    {!isAuthenticated && (
+                      <span className="rounded-full bg-white/15 px-2 py-1 text-xs text-white">Free</span>
+                    )}
+                  </>
+                )}
+              </button>
+            </form>
+          </section>
+
+          <aside className="overflow-hidden rounded-[2rem] bg-stone-950 p-8 text-white shadow-[0_32px_90px_rgba(24,21,18,0.18)]">
+            <div className="text-xs uppercase tracking-[0.18em] text-stone-400">Preview</div>
+            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em]">
+              A cleaner publishing ritual.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-stone-300">
+              This flow is intentionally quiet. You make a few confident choices, validate
+              the source, and move forward without extra clutter.
+            </p>
+
+            <div className="mt-8 space-y-4">
+              <div className="rounded-[1.5rem] bg-white/6 p-5">
+                <div className="text-sm font-medium">Before publish</div>
+                <div className="mt-2 text-sm leading-6 text-stone-300">
+                  Input parsing, access validation, unsupported block warnings, and URL preview.
+                </div>
+              </div>
+              <div className="rounded-[1.5rem] bg-white/6 p-5">
+                <div className="text-sm font-medium">After publish</div>
+                <div className="mt-2 text-sm leading-6 text-stone-300">
+                  Continue editing from Notion, update the template later, and attach a custom
+                  domain when you are ready.
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.03)_100%)] p-5">
+              <div className="text-xs uppercase tracking-[0.16em] text-stone-400">Live outline</div>
+              <div className="mt-4 space-y-3">
+                <div className="rounded-[1rem] bg-white/8 px-4 py-3">
+                  <div className="text-sm font-medium">Source</div>
+                  <div className="mt-1 text-xs text-stone-400">Notion page or database</div>
+                </div>
+                <div className="rounded-[1rem] bg-white/8 px-4 py-3">
+                  <div className="text-sm font-medium">Presentation</div>
+                  <div className="mt-1 text-xs text-stone-400">
+                    {templates.find((template) => template.id === selectedTemplate)?.name} template
+                  </div>
+                </div>
+                <div className="rounded-[1rem] bg-white/8 px-4 py-3">
+                  <div className="text-sm font-medium">Publish path</div>
+                  <div className="mt-1 break-all text-xs text-stone-400">
+                    {expectedPublishUrl || "/p/your-site?template=minimal"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
         </div>
       </main>
 
