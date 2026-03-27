@@ -151,7 +151,7 @@ export default function DashboardPageClient() {
     setAuthDevVerificationUrl("");
     const form = e.target as HTMLFormElement;
     const email = (form.elements.namedItem("email") as HTMLInputElement).value;
-    const name = (form.elements.namedItem("name") as HTMLInputElement).value;
+    const name = (form.elements.namedItem("name") as HTMLInputElement | null)?.value || "";
     const password = (form.elements.namedItem("password") as HTMLInputElement).value;
     const confirmPassword = (form.elements.namedItem("confirmPassword") as HTMLInputElement | null)?.value || "";
 
