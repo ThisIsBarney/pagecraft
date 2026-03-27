@@ -11,32 +11,29 @@ export const metadata: Metadata = buildPageMetadata({
 
 export default function PaymentCancelPage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-sm border p-8 max-w-md w-full mx-6 text-center">
-        <div className="text-6xl mb-4">😕</div>
-        <h1 className="text-2xl font-bold mb-2">Payment Cancelled</h1>
-        <p className="text-gray-600 mb-6">
-          No worries! You can try again whenever you&apos;re ready.
+    <div className="page-shell flex min-h-screen items-center justify-center px-6">
+      <div className="glass-panel-strong w-full max-w-md rounded-[1.75rem] p-8 text-center">
+        <h1 className="text-3xl font-semibold tracking-[-0.04em] text-stone-950">Payment cancelled</h1>
+        <p className="mt-3 text-sm leading-7 soft-text">
+          Checkout was not completed. You can restart whenever you are ready.
         </p>
 
-        <div className="space-y-3">
+        <div className="mt-6 space-y-3">
           <a
             href="/domains"
-            className="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            className="block w-full rounded-full bg-stone-950 py-3 text-sm font-medium text-white transition hover:bg-stone-800"
           >
-            Try Again
+            Try again
           </a>
           <a
             href="/"
-            className="block w-full py-3 text-gray-700 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+            className="block w-full rounded-full border border-black/12 bg-white py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
           >
-            Back to Home
+            Back to home
           </a>
         </div>
 
-        <p className="mt-6 text-sm text-gray-500">
-          Still have questions? Contact us at support@pagecraft.io
-        </p>
+        <p className="mt-6 text-sm soft-text">Need help: support@pagecraft.io</p>
       </div>
     </div>
   );

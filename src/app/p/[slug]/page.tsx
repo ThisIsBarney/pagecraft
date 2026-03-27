@@ -148,16 +148,15 @@ export default async function PublicPage({ params, searchParams }: PageProps) {
     }
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md px-6">
-          <div className="text-6xl mb-4">🔍</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">{errorTitle}</h1>
-          <p className="text-gray-600 whitespace-pre-line mb-6">{errorMessage}</p>
+      <div className="page-shell flex min-h-screen items-center justify-center px-6">
+        <div className="glass-panel-strong max-w-md rounded-[1.75rem] px-8 py-7 text-center">
+          <h1 className="text-2xl font-semibold tracking-[-0.03em] text-stone-950">{errorTitle}</h1>
+          <p className="mt-3 whitespace-pre-line text-sm soft-text">{errorMessage}</p>
           <a
             href="/"
-            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-full font-medium hover:bg-blue-700 transition-colors"
+            className="mt-6 inline-block rounded-full bg-stone-950 px-6 py-3 text-sm font-medium text-white transition hover:bg-stone-800"
           >
-            ← Back to Home
+            Back to home
           </a>
         </div>
       </div>

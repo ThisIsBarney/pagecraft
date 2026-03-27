@@ -113,7 +113,7 @@ const samplePageContent: PageContent = {
       id: "7-2",
       type: "callout",
       callout: {
-        icon: { emoji: "🚀" },
+        icon: null,
         rich_text: [{ type: "text", text: { content: "Shipping weekly keeps momentum high." } }],
       },
     },
@@ -243,7 +243,7 @@ const sampleDatabaseContent: PageContent = {
         Tech: "Next.js, Notion API",
       },
       url: "#",
-      icon: "🦾",
+      icon: "PC",
     },
     {
       id: "2",
@@ -254,7 +254,7 @@ const sampleDatabaseContent: PageContent = {
         Tech: "OpenAI, Python",
       },
       url: "#",
-      icon: "🤖",
+      icon: "AI",
     },
     {
       id: "3",
@@ -265,7 +265,7 @@ const sampleDatabaseContent: PageContent = {
         Tech: "React, Tailwind",
       },
       url: "#",
-      icon: "🎨",
+      icon: "UX",
     },
   ],
 };

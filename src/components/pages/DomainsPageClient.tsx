@@ -96,7 +96,6 @@ export default function DomainsPageClient() {
     setLoading(true);
 
     try {
-      // 创建结账会话
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -117,7 +116,6 @@ export default function DomainsPageClient() {
         return;
       }
 
-      // 跳转到 Stripe 结账
       const checkoutUrl = getCheckoutUrl(data);
       if (checkoutUrl) {
         window.location.href = checkoutUrl;
@@ -139,179 +137,178 @@ export default function DomainsPageClient() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="max-w-3xl mx-auto px-6 py-4">
-          <a href="/" className="text-xl font-bold flex items-center gap-2">
-            <span>🦾</span> PageCraft
+    <div className="page-shell min-h-screen">
+      <header className="border-b border-black/8 bg-white/60 backdrop-blur">
+        <div className="mx-auto w-full max-w-4xl px-6 py-5 lg:px-8">
+          <a href="/" className="flex items-center gap-3 text-stone-950">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-950 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+              PC
+            </span>
+            <span>
+              <span className="block text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">PageCraft</span>
+              <span className="block text-sm soft-text">Upgrade</span>
+            </span>
           </a>
         </div>
       </header>
 
-      <main className="max-w-xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-2xl shadow-sm border p-8">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold mb-2">Upgrade to Pro</h1>
-            <p className="text-gray-600">
-              Unlock all features and optionally connect a custom domain.
-            </p>
-          </div>
-
-          {/* Pricing Card */}
-          <div className="bg-gradient-to-r from-blue-500 to-violet-500 rounded-xl p-6 text-white mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-lg">Pro Plan</h3>
-                <p className="text-blue-100 text-sm">Everything you need</p>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold">$6</div>
-                <div className="text-blue-100 text-sm">/month</div>
-              </div>
-            </div>
-            <ul className="mt-4 space-y-2 text-sm">
-              <li className="flex items-center gap-2"><span>✓</span> Custom domain (optional)</li>
-              <li className="flex items-center gap-2"><span>✓</span> All premium templates</li>
-              <li className="flex items-center gap-2"><span>✓</span> Remove PageCraft branding</li>
-              <li className="flex items-center gap-2"><span>✓</span> Analytics</li>
-              <li className="flex items-center gap-2"><span>✓</span> Priority support</li>
-            </ul>
-          </div>
-
-          {result && (
-            <div className={`mb-6 p-4 rounded-lg ${result.success ? "bg-green-50 border border-green-200 text-green-700" : "bg-red-50 border border-red-200 text-red-700"}`}>
-              {result.success ? result.message : result.error}
-            </div>
-          )}
-
-          {(hasDomain || normalizedPageId) && (
-            <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-slate-700">
-              <div className="font-medium text-slate-900">Checkout summary</div>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                <div>
-                  <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                    Domain
-                  </div>
-                  <div className={hasDomain && !isValidDomain(normalizedDomain) ? "text-red-600" : ""}>
-                    {normalizedDomain || "Not provided"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                    Notion page
-                  </div>
-                  <div className={hasPageId && !normalizedPageId ? "text-red-600" : "font-mono text-xs"}>
-                    {normalizedPageId || (hasPageId ? "Invalid page reference" : "Not provided")}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                    Template
-                  </div>
-                  <div className="capitalize">{template}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Domain - Optional */}
-            <div>
-              <label htmlFor={domainFieldId} className="block text-sm font-medium text-gray-700 mb-2">
-                Your Domain <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <input
-                id={domainFieldId}
-                type="text"
-                value={domain}
-                onChange={(e) => {
-                  setDomain(e.target.value);
-                  setResult(null);
-                }}
-                placeholder="e.g., example.com (leave empty to skip)"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <p className="mt-2 text-sm text-gray-500">
-                You can add a custom domain later from your dashboard
+      <main className="mx-auto w-full max-w-4xl px-6 py-10 lg:px-8">
+        <div className="glass-panel-strong rounded-[2rem] p-8">
+          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+            <section>
+              <h1 className="text-3xl font-semibold tracking-[-0.05em] text-stone-950">Upgrade to Pro</h1>
+              <p className="mt-3 text-sm leading-7 soft-text">
+                Unlock full publishing control, connect custom domains, and remove limits.
               </p>
-              {hasDomain && (
-                <p className={`mt-2 text-xs ${isValidDomain(normalizedDomain) ? "text-emerald-600" : "text-red-600"}`}>
-                  {isValidDomain(normalizedDomain)
-                    ? `We'll use: ${normalizedDomain}`
-                    : "Enter a domain like example.com without spaces or invalid characters"}
-                </p>
+
+              <div className="mt-6 rounded-2xl border border-black/8 bg-stone-950 px-6 py-5 text-white">
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold">Pro plan</h2>
+                    <p className="mt-1 text-sm text-stone-300">Everything you need to run PageCraft at scale</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-semibold tracking-[-0.03em]">$6</div>
+                    <div className="text-xs uppercase tracking-[0.12em] text-stone-400">per month</div>
+                  </div>
+                </div>
+
+                <ul className="mt-5 space-y-2 text-sm text-stone-200">
+                  <li>Custom domain support</li>
+                  <li>All premium templates</li>
+                  <li>Remove PageCraft branding</li>
+                  <li>Analytics and priority support</li>
+                </ul>
+              </div>
+
+              {domain && (
+                <div className="mt-6 rounded-2xl border border-black/8 bg-white/75 p-5">
+                  <h3 className="text-sm font-medium text-stone-900">After payment</h3>
+                  <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm soft-text">
+                    <li>Add DNS record `CNAME`</li>
+                    <li>Host: `@`</li>
+                    <li>Value: `pagecraft-eight.vercel.app`</li>
+                  </ol>
+                </div>
               )}
-            </div>
+            </section>
 
-            {/* Page ID - Optional */}
-            <div>
-              <label htmlFor={pageIdFieldId} className="block text-sm font-medium text-gray-700 mb-2">
-                Notion Page ID <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <input
-                id={pageIdFieldId}
-                type="text"
-                value={pageId}
-                onChange={(e) => {
-                  setPageId(e.target.value);
-                  setResult(null);
-                }}
-                placeholder="e.g., 1a2b3c4d5e6f7g8h9i0j1234567890ab"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-              />
-              {hasPageId && (
-                <p className={`mt-2 text-xs ${normalizedPageId ? "text-emerald-600" : "text-red-600"}`}>
-                  {normalizedPageId
-                    ? `Detected page ID: ${normalizedPageId}`
-                    : "Paste a 32-character page ID or a full Notion share URL"}
-                </p>
+            <section>
+              {result && (
+                <div
+                  className={`mb-5 rounded-xl border p-4 text-sm ${
+                    result.success
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                >
+                  {result.success ? result.message : result.error}
+                </div>
               )}
-            </div>
 
-            {/* Template */}
-            <div>
-              <label htmlFor={templateFieldId} className="block text-sm font-medium text-gray-700 mb-2">
-                Default Template
-              </label>
-              <select
-                id={templateFieldId}
-                value={template}
-                onChange={(e) => setTemplate(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="minimal">Minimal</option>
-                <option value="designer">Designer</option>
-                <option value="developer">Developer</option>
-                <option value="creator">Creator</option>
-              </select>
-            </div>
+              {(hasDomain || normalizedPageId) && (
+                <div className="mb-5 rounded-xl border border-black/8 bg-white/70 p-4 text-sm text-stone-700">
+                  <div className="font-medium text-stone-900">Checkout summary</div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.12em] text-stone-500">Domain</div>
+                      <div className={hasDomain && !isValidDomain(normalizedDomain) ? "text-red-600" : ""}>
+                        {normalizedDomain || "Not provided"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.12em] text-stone-500">Notion page</div>
+                      <div className={hasPageId && !normalizedPageId ? "text-red-600" : "font-mono text-xs"}>
+                        {normalizedPageId || (hasPageId ? "Invalid page reference" : "Not provided")}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.12em] text-stone-500">Template</div>
+                      <div className="capitalize">{template}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? "Processing..." : "Upgrade to Pro - $6/month"}
-            </button>
-          </form>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label htmlFor={domainFieldId} className="mb-2 block text-sm font-medium text-stone-700">
+                    Your domain <span className="font-normal text-stone-400">(optional)</span>
+                  </label>
+                  <input
+                    id={domainFieldId}
+                    type="text"
+                    value={domain}
+                    onChange={(e) => {
+                      setDomain(e.target.value);
+                      setResult(null);
+                    }}
+                    placeholder="example.com"
+                    className="w-full rounded-xl border border-black/10 bg-white/90 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-900"
+                  />
+                  <p className="mt-2 text-xs soft-text">You can also connect a domain later from dashboard.</p>
+                  {hasDomain && (
+                    <p className={`mt-2 text-xs ${isValidDomain(normalizedDomain) ? "text-emerald-700" : "text-red-600"}`}>
+                      {isValidDomain(normalizedDomain)
+                        ? `Detected: ${normalizedDomain}`
+                        : "Enter a valid domain like example.com"}
+                    </p>
+                  )}
+                </div>
 
-          {domain && (
-            <div className="mt-8 pt-6 border-t">
-              <h3 className="font-medium text-gray-900 mb-3">After payment:</h3>
-              <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
-                <li>Add CNAME record in your DNS:</li>
-                <li className="pl-5 font-mono text-xs bg-gray-100 p-2 rounded">
-                  Name: @<br />
-                  Value: pagecraft-eight.vercel.app
-                </li>
-                <li>Your site will be live in 5-10 minutes!</li>
-              </ol>
-            </div>
-          )}
+                <div>
+                  <label htmlFor={pageIdFieldId} className="mb-2 block text-sm font-medium text-stone-700">
+                    Notion page <span className="font-normal text-stone-400">(optional)</span>
+                  </label>
+                  <input
+                    id={pageIdFieldId}
+                    type="text"
+                    value={pageId}
+                    onChange={(e) => {
+                      setPageId(e.target.value);
+                      setResult(null);
+                    }}
+                    placeholder="32-character page ID or full Notion URL"
+                    className="w-full rounded-xl border border-black/10 bg-white/90 px-4 py-3 font-mono text-sm text-stone-900 outline-none transition focus:border-stone-900"
+                  />
+                  {hasPageId && (
+                    <p className={`mt-2 text-xs ${normalizedPageId ? "text-emerald-700" : "text-red-600"}`}>
+                      {normalizedPageId
+                        ? `Detected page ID: ${normalizedPageId}`
+                        : "Paste a full Notion URL or page ID"}
+                    </p>
+                  )}
+                </div>
 
-          <p className="mt-6 text-xs text-gray-500 text-center">
-            Powered by Stripe. Cancel anytime.
-          </p>
+                <div>
+                  <label htmlFor={templateFieldId} className="mb-2 block text-sm font-medium text-stone-700">
+                    Default template
+                  </label>
+                  <select
+                    id={templateFieldId}
+                    value={template}
+                    onChange={(e) => setTemplate(e.target.value)}
+                    className="w-full rounded-xl border border-black/10 bg-white/90 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-900"
+                  >
+                    <option value="minimal">Minimal</option>
+                    <option value="designer">Designer</option>
+                    <option value="developer">Developer</option>
+                    <option value="creator">Creator</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-full bg-stone-950 py-3 text-sm font-medium text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading ? "Processing..." : "Upgrade to Pro"}
+                </button>
+              </form>
+
+              <p className="mt-5 text-center text-xs soft-text">Powered by Stripe. Cancel anytime.</p>
+            </section>
+          </div>
         </div>
       </main>
     </div>

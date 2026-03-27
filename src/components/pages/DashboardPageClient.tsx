@@ -148,8 +148,6 @@ export default function DashboardPageClient() {
     if (res.ok) {
       const data = await res.json();
       setUser(data.user);
-
-      // 刷新页面获取域名
       window.location.reload();
     }
   };
@@ -211,10 +209,10 @@ export default function DashboardPageClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
+      <div className="page-shell flex min-h-screen items-center justify-center px-6">
+        <div className="glass-panel rounded-[1.5rem] px-8 py-7 text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-stone-300 border-t-stone-900" />
+          <p className="text-sm soft-text">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -222,40 +220,36 @@ export default function DashboardPageClient() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-sm border p-8 max-w-md w-full mx-6">
-          <h1 className="text-2xl font-bold mb-2">Welcome to PageCraft</h1>
-          <p className="text-gray-600 mb-6">Sign in to manage your sites</p>
+      <div className="page-shell flex min-h-screen items-center justify-center px-6">
+        <div className="glass-panel-strong w-full max-w-md rounded-[1.75rem] p-8">
+          <h1 className="text-2xl font-semibold tracking-[-0.04em] text-stone-950">Sign in to PageCraft</h1>
+          <p className="mt-2 text-sm soft-text">Manage pages, domains, and publishing settings.</p>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="mt-7 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
+              <label className="mb-2 block text-sm font-medium text-stone-700">Email</label>
               <input
                 name="email"
                 type="email"
                 required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-xl border border-black/10 bg-white/90 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-900"
                 placeholder="you@example.com"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Name (optional)
-              </label>
+              <label className="mb-2 block text-sm font-medium text-stone-700">Name (optional)</label>
               <input
                 name="name"
                 type="text"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-xl border border-black/10 bg-white/90 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-900"
                 placeholder="Your name"
               />
             </div>
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              className="w-full rounded-full bg-stone-950 py-3 text-sm font-medium text-white transition hover:bg-stone-800"
             >
-              Sign In / Sign Up
+              Continue
             </button>
           </form>
         </div>
@@ -278,295 +272,282 @@ export default function DashboardPageClient() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🦾</span>
-            <span className="font-bold text-xl">PageCraft</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{user.email}</span>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-              isPro
-                ? "bg-green-100 text-green-700"
-                : "bg-gray-100 text-gray-700"
-            }`}>
+    <div className="page-shell min-h-screen">
+      <header className="border-b border-black/8 bg-white/60 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5 lg:px-8">
+          <a href="/" className="flex items-center gap-3 text-stone-950">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-950 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+              PC
+            </span>
+            <span>
+              <span className="block text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">PageCraft</span>
+              <span className="block text-sm soft-text">Dashboard</span>
+            </span>
+          </a>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm text-stone-600 sm:inline">{user.email}</span>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                isPro ? "border border-emerald-200 bg-emerald-50 text-emerald-800" : "border border-stone-300 bg-white text-stone-700"
+              }`}
+            >
               {isPro ? "Pro" : "Free"}
             </span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Quick Actions */}
-          <div className="md:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
-              <div className="grid grid-cols-2 gap-4">
+      <main className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+          <div className="space-y-6">
+            <section className="glass-panel-strong rounded-[1.75rem] p-6">
+              <h2 className="text-xl font-semibold tracking-[-0.03em] text-stone-950">Quick actions</h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <a
                   href="/create"
-                  className="p-4 border border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                  className="rounded-2xl border border-black/8 bg-white/80 p-5 transition hover:border-stone-400 hover:bg-white"
                 >
-                  <div className="text-2xl mb-2">➕</div>
-                  <div className="font-medium">Create New Site</div>
-                  <div className="text-sm text-gray-500">From Notion page</div>
+                  <div className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">Create</div>
+                  <div className="mt-2 font-medium text-stone-950">Create new site</div>
+                  <div className="mt-1 text-sm soft-text">Publish from a Notion page.</div>
                 </a>
                 <a
                   href={isPro ? "/manage-domains" : "/domains"}
-                  className="p-4 border border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                  className="rounded-2xl border border-black/8 bg-white/80 p-5 transition hover:border-stone-400 hover:bg-white"
                 >
-                  <div className="text-2xl mb-2">🌐</div>
-                  <div className="font-medium">{isPro ? "Manage Domains" : "Connect Domain"}</div>
-                  <div className="text-sm text-gray-500">{isPro ? "Add or edit your domains" : "Use your own domain"}</div>
+                  <div className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">Domain</div>
+                  <div className="mt-2 font-medium text-stone-950">{isPro ? "Manage domains" : "Upgrade for domains"}</div>
+                  <div className="mt-1 text-sm soft-text">{isPro ? "Add and edit custom domains." : "Use your own domain name."}</div>
                 </a>
               </div>
-            </div>
+            </section>
 
-            {/* My Sites */}
-            <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h2 className="text-xl font-bold mb-4">My Sites</h2>
+            <section className="glass-panel-strong rounded-[1.75rem] p-6">
+              <h2 className="text-xl font-semibold tracking-[-0.03em] text-stone-950">My sites</h2>
               {sites.length > 0 ? (
-                <div className="space-y-4">
+                <div className="mt-4 space-y-3">
                   {sites.map((site) => (
-                    <div key={site.domain} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
+                    <div key={site.domain} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/8 bg-white/85 p-4">
                       <div>
-                        <div className="font-medium">{site.domain}</div>
-                        <div className="text-sm text-gray-500">Template: {site.template}</div>
+                        <div className="font-medium text-stone-950">{site.domain}</div>
+                        <div className="mt-1 text-sm soft-text">Template: {site.template}</div>
                       </div>
-                      <div className="flex gap-2">
-                        <a
-                          href={site.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-                        >
-                          Visit →
-                        </a>
-                      </div>
+                      <a
+                        href={site.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-full bg-stone-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-800"
+                      >
+                        Open site
+                      </a>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <div className="text-4xl mb-4">📭</div>
-                  <p>No sites yet. Create your first site!</p>
-                  <a
-                    href="/create"
-                    className="inline-block mt-4 text-blue-600 hover:underline"
-                  >
-                    Create Site →
+                <div className="mt-4 rounded-2xl border border-dashed border-stone-300 bg-white/70 px-5 py-10 text-center">
+                  <p className="text-sm soft-text">No sites yet. Start with your first page.</p>
+                  <a href="/create" className="mt-4 inline-block text-sm font-medium text-stone-900 underline">
+                    Create a site
                   </a>
                 </div>
               )}
-            </div>
+            </section>
 
-            {/* My Pages */}
-            <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h2 className="text-xl font-bold mb-4">My Pages</h2>
+            <section className="glass-panel-strong rounded-[1.75rem] p-6">
+              <h2 className="text-xl font-semibold tracking-[-0.03em] text-stone-950">My pages</h2>
               {savedPagesError ? (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   <p className="font-medium">{savedPagesError}</p>
                   <p className="mt-1 text-amber-800">Please try again in a moment.</p>
                   <button
                     type="button"
                     onClick={fetchSavedPages}
-                    className="mt-3 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+                    className="mt-3 rounded-full border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
                   >
-                    Retry loading pages
+                    Retry
                   </button>
                 </div>
               ) : savedPages.length > 0 ? (
-                <div className="space-y-4">
+                <div className="mt-4 space-y-4">
                   {orderedSavedPages.map((savedPage) => {
                     const pageSlug = slugDrafts[savedPage.id] || savedPage.slug || savedPage.notionPageId;
-                    const currentTemplate =
-                      templateDrafts[savedPage.id] || savedPage.template || "minimal";
+                    const currentTemplate = templateDrafts[savedPage.id] || savedPage.template || "minimal";
                     const previewUrl = `/p/${pageSlug}?template=${currentTemplate}`;
                     const notionUrl = `https://www.notion.so/${savedPage.notionPageId}`;
 
                     return (
                       <div
                         key={savedPage.id}
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 p-4"
+                        className="rounded-2xl border border-black/8 bg-white/85 p-4"
                       >
-                        <div>
-                          <div className="font-medium">{savedPage.title || "Untitled"}</div>
-                          <div className="text-sm text-gray-500">Template: {savedPage.template || "minimal"}</div>
-                          <div className="mt-2 flex items-center gap-2">
-                            <input
-                              aria-label={`Slug for ${savedPage.title || "Untitled"}`}
-                              value={slugDrafts[savedPage.id] || savedPage.slug || savedPage.notionPageId}
-                              onChange={(event) =>
-                                setSlugDrafts((current) => ({
-                                  ...current,
-                                  [savedPage.id]: event.target.value,
-                                }))
-                              }
-                              className="w-56 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700"
-                            />
-                            <select
-                              aria-label={`Template for ${savedPage.title || "Untitled"}`}
-                              value={templateDrafts[savedPage.id] || savedPage.template || "minimal"}
-                              onChange={(event) =>
-                                setTemplateDrafts((current) => ({
-                                  ...current,
-                                  [savedPage.id]: event.target.value,
-                                }))
-                              }
-                              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700"
-                            >
-                              <option value="minimal">Minimal</option>
-                              <option value="designer">Designer</option>
-                              <option value="developer">Developer</option>
-                              <option value="creator">Creator</option>
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => savePageTemplate(savedPage)}
-                              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
-                              disabled={savingTemplatePageId === savedPage.id}
-                            >
-                              {savingTemplatePageId === savedPage.id ? "Saving..." : "Save changes"}
-                            </button>
-                          </div>
-                          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                            <label className="flex items-center gap-2">
-                              <span>Nav order</span>
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-stone-950">{savedPage.title || "Untitled"}</div>
+                            <div className="mt-1 text-sm soft-text">Template: {savedPage.template || "minimal"}</div>
+
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
                               <input
-                                type="number"
-                                min={0}
-                                aria-label={`Navigation order for ${savedPage.title || "Untitled"}`}
-                                value={navOrderDrafts[savedPage.id] ?? "0"}
+                                aria-label={`Slug for ${savedPage.title || "Untitled"}`}
+                                value={slugDrafts[savedPage.id] || savedPage.slug || savedPage.notionPageId}
                                 onChange={(event) =>
-                                  setNavOrderDrafts((current) => ({
+                                  setSlugDrafts((current) => ({
                                     ...current,
                                     [savedPage.id]: event.target.value,
                                   }))
                                 }
-                                className="w-20 rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700"
+                                className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-stone-700 sm:w-56"
                               />
-                            </label>
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                aria-label={`Hide ${savedPage.title || "Untitled"} from navigation`}
-                                checked={Boolean(hiddenFromNavDrafts[savedPage.id])}
+                              <select
+                                aria-label={`Template for ${savedPage.title || "Untitled"}`}
+                                value={templateDrafts[savedPage.id] || savedPage.template || "minimal"}
                                 onChange={(event) =>
-                                  setHiddenFromNavDrafts((current) => ({
+                                  setTemplateDrafts((current) => ({
                                     ...current,
-                                    [savedPage.id]: event.target.checked,
+                                    [savedPage.id]: event.target.value,
                                   }))
                                 }
-                              />
-                              <span>Hide from navigation</span>
-                            </label>
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="radio"
-                                name="home-page-selection"
-                                aria-label={`Set ${savedPage.title || "Untitled"} as home page`}
-                                checked={homeDraftPageId === savedPage.id}
-                                onChange={() => setHomeDraftPageId(savedPage.id)}
-                              />
-                              <span>Home page</span>
-                            </label>
+                                className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-stone-700"
+                              >
+                                <option value="minimal">Minimal</option>
+                                <option value="designer">Designer</option>
+                                <option value="developer">Developer</option>
+                                <option value="creator">Creator</option>
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => savePageTemplate(savedPage)}
+                                className="rounded-full border border-black/12 bg-white px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-50"
+                                disabled={savingTemplatePageId === savedPage.id}
+                              >
+                                {savingTemplatePageId === savedPage.id ? "Saving..." : "Save"}
+                              </button>
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-stone-600">
+                              <label className="flex items-center gap-2">
+                                <span>Order</span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  aria-label={`Navigation order for ${savedPage.title || "Untitled"}`}
+                                  value={navOrderDrafts[savedPage.id] ?? "0"}
+                                  onChange={(event) =>
+                                    setNavOrderDrafts((current) => ({
+                                      ...current,
+                                      [savedPage.id]: event.target.value,
+                                    }))
+                                  }
+                                  className="w-20 rounded-lg border border-black/10 bg-white px-2 py-1 text-sm text-stone-700"
+                                />
+                              </label>
+                              <label className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Hide ${savedPage.title || "Untitled"} from navigation`}
+                                  checked={Boolean(hiddenFromNavDrafts[savedPage.id])}
+                                  onChange={(event) =>
+                                    setHiddenFromNavDrafts((current) => ({
+                                      ...current,
+                                      [savedPage.id]: event.target.checked,
+                                    }))
+                                  }
+                                />
+                                <span>Hide from nav</span>
+                              </label>
+                              <label className="flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name="home-page-selection"
+                                  aria-label={`Set ${savedPage.title || "Untitled"} as home page`}
+                                  checked={homeDraftPageId === savedPage.id}
+                                  onChange={() => setHomeDraftPageId(savedPage.id)}
+                                />
+                                <span>Home page</span>
+                              </label>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => copyPublishUrl(savedPage.id, pageSlug, currentTemplate)}
-                            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
-                          >
-                            {copiedPageId === savedPage.id ? "Copied" : "Copy URL"}
-                          </button>
-                          <a
-                            href={previewUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white transition-colors hover:bg-black"
-                          >
-                            Preview
-                          </a>
-                          <a
-                            href={notionUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100"
-                          >
-                            Edit in Notion
-                          </a>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => copyPublishUrl(savedPage.id, pageSlug, currentTemplate)}
+                              className="rounded-full border border-black/12 bg-white px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-50"
+                            >
+                              {copiedPageId === savedPage.id ? "Copied" : "Copy URL"}
+                            </button>
+                            <a
+                              href={previewUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-full bg-stone-950 px-4 py-2 text-sm text-white transition hover:bg-black"
+                            >
+                              Preview
+                            </a>
+                            <a
+                              href={notionUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-full border border-black/12 bg-white px-4 py-2 text-sm text-stone-700 transition hover:bg-stone-50"
+                            >
+                              Edit in Notion
+                            </a>
+                          </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No saved pages yet. Publish from Create to manage them here.</p>
+                <p className="mt-4 text-sm soft-text">No saved pages yet. Publish from Create to manage them here.</p>
               )}
-            </div>
+            </section>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Subscription */}
-            <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h3 className="font-bold mb-4">Subscription</h3>
+            <section className="glass-panel-strong rounded-[1.75rem] p-6">
+              <h3 className="text-base font-semibold text-stone-950">Subscription</h3>
               {isPro ? (
-                <div>
-                  <div className="flex items-center gap-2 text-green-600 mb-2">
-                    <span>✓</span>
-                    <span className="font-medium">Pro Plan Active</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Unlimited sites, custom domains, and more.
-                  </p>
-                  <button className="w-full py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
-                    Manage Subscription
+                <div className="mt-3">
+                  <div className="text-sm font-medium text-emerald-700">Pro plan active</div>
+                  <p className="mt-2 text-sm soft-text">Unlimited sites, custom domains, and priority support.</p>
+                  <button className="mt-4 w-full rounded-full border border-black/12 bg-white py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50">
+                    Manage subscription
                   </button>
                 </div>
               ) : (
-                <div>
-                  <div className="flex items-center gap-2 text-gray-600 mb-2">
-                    <span>⭐</span>
-                    <span className="font-medium">Free Plan</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-4">
-                    1 site, subdomain only. Upgrade for more features.
-                  </p>
+                <div className="mt-3">
+                  <div className="text-sm font-medium text-stone-800">Free plan</div>
+                  <p className="mt-2 text-sm soft-text">One site and subdomain. Upgrade to unlock custom domains.</p>
                   <a
                     href="/domains"
-                    className="block w-full py-2 bg-blue-600 text-white rounded-lg text-sm text-center hover:bg-blue-700 transition-colors"
+                    className="mt-4 block w-full rounded-full bg-stone-950 py-2 text-center text-sm font-medium text-white transition hover:bg-stone-800"
                   >
                     Upgrade to Pro
                   </a>
                 </div>
               )}
-            </div>
+            </section>
 
-            {/* Resources */}
-            <div className="bg-white rounded-2xl shadow-sm border p-6">
-              <h3 className="font-bold mb-4">Resources</h3>
-              <ul className="space-y-2 text-sm">
+            <section className="glass-panel-strong rounded-[1.75rem] p-6">
+              <h3 className="text-base font-semibold text-stone-950">Resources</h3>
+              <ul className="mt-3 space-y-2 text-sm">
                 <li>
-                  <a href="/examples" className="text-blue-600 hover:underline">
-                    Template Gallery
+                  <a href="/examples" className="text-stone-700 underline-offset-4 hover:text-stone-950 hover:underline">
+                    Template gallery
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-blue-600 hover:underline">
+                  <a href="#" className="text-stone-700 underline-offset-4 hover:text-stone-950 hover:underline">
                     Documentation
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-blue-600 hover:underline">
+                  <a href="#" className="text-stone-700 underline-offset-4 hover:text-stone-950 hover:underline">
                     Support
                   </a>
                 </li>
               </ul>
-            </div>
+            </section>
           </div>
         </div>
       </main>

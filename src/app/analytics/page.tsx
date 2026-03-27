@@ -26,10 +26,10 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading analytics...</p>
+      <div className="page-shell flex min-h-screen items-center justify-center px-6">
+        <div className="glass-panel rounded-[1.5rem] px-8 py-7 text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-stone-300 border-t-stone-900" />
+          <p className="text-sm soft-text">Loading analytics...</p>
         </div>
       </div>
     );
@@ -37,33 +37,38 @@ export default function AnalyticsPage() {
 
   if (!stats) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Failed to load analytics</p>
+      <div className="page-shell flex min-h-screen items-center justify-center px-6">
+        <div className="glass-panel rounded-[1.5rem] px-8 py-7 text-center">
+          <p className="text-sm soft-text">Failed to load analytics.</p>
+        </div>
       </div>
     );
   }
 
-  // 准备图表数据
   const dates = Object.keys(stats.dailyViews).sort();
   const maxViews = Math.max(...Object.values(stats.dailyViews), 1);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🦾</span>
-            <span className="font-bold text-xl">Analytics</span>
-          </div>
-          <a href="/dashboard" className="text-blue-600 hover:underline">
-            ← Back to Dashboard
+    <div className="page-shell min-h-screen">
+      <header className="border-b border-black/8 bg-white/60 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5 lg:px-8">
+          <a href="/dashboard" className="flex items-center gap-3 text-stone-950">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-950 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+              PC
+            </span>
+            <span>
+              <span className="block text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">PageCraft</span>
+              <span className="block text-sm soft-text">Analytics</span>
+            </span>
+          </a>
+          <a href="/dashboard" className="text-sm text-stone-700 underline-offset-4 hover:text-stone-950 hover:underline">
+            Back to dashboard
           </a>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
-        {/* Period Selector */}
-        <div className="flex gap-2 mb-8">
+      <main className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
+        <div className="mb-6 flex flex-wrap gap-2">
           {[
             { id: "7d", label: "Last 7 days" },
             { id: "30d", label: "Last 30 days" },
@@ -72,10 +77,10 @@ export default function AnalyticsPage() {
             <button
               key={p.id}
               onClick={() => setPeriod(p.id)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                 period === p.id
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                  ? "bg-stone-950 text-white"
+                  : "border border-black/12 bg-white text-stone-700 hover:bg-stone-50"
               }`}
             >
               {p.label}
@@ -83,60 +88,59 @@ export default function AnalyticsPage() {
           ))}
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-sm border p-6">
-            <div className="text-sm text-gray-500 mb-1">Total Views</div>
-            <div className="text-4xl font-bold">{stats.totalViews.toLocaleString()}</div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="glass-panel-strong rounded-[1.5rem] p-6">
+            <div className="text-sm soft-text">Total views</div>
+            <div className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-stone-950">{stats.totalViews.toLocaleString()}</div>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border p-6">
-            <div className="text-sm text-gray-500 mb-1">Unique Visitors</div>
-            <div className="text-4xl font-bold">{stats.uniqueVisitors.toLocaleString()}</div>
+          <div className="glass-panel-strong rounded-[1.5rem] p-6">
+            <div className="text-sm soft-text">Unique visitors</div>
+            <div className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-stone-950">{stats.uniqueVisitors.toLocaleString()}</div>
           </div>
         </div>
 
-        {/* Daily Views Chart */}
-        <div className="bg-white rounded-2xl shadow-sm border p-6 mb-8">
-          <h2 className="text-xl font-bold mb-6">Daily Views</h2>
-          {dates.length > 0 ? (
-            <div className="space-y-3">
-              {dates.map((date) => {
-                const views = stats.dailyViews[date];
-                const percentage = (views / maxViews) * 100;
-                return (
-                  <div key={date} className="flex items-center gap-4">
-                    <div className="w-24 text-sm text-gray-600">{date}</div>
-                    <div className="flex-1 h-8 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 rounded-full transition-all"
-                        style={{ width: `${percentage}%` }}
-                      />
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <section className="glass-panel-strong rounded-[1.5rem] p-6">
+            <h2 className="text-lg font-semibold text-stone-950">Daily views</h2>
+            {dates.length > 0 ? (
+              <div className="mt-5 space-y-3">
+                {dates.map((date) => {
+                  const views = stats.dailyViews[date];
+                  const percentage = (views / maxViews) * 100;
+                  return (
+                    <div key={date} className="flex items-center gap-4">
+                      <div className="w-24 text-xs text-stone-500">{date}</div>
+                      <div className="h-7 flex-1 overflow-hidden rounded-full bg-stone-100">
+                        <div
+                          className="h-full rounded-full bg-stone-900 transition-all"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                      <div className="w-12 text-right text-sm font-medium text-stone-900">{views}</div>
                     </div>
-                    <div className="w-12 text-right font-medium">{views}</div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-8">No data yet</p>
-          )}
-        </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="py-8 text-center text-sm soft-text">No data yet</p>
+            )}
+          </section>
 
-        {/* Top Referrers */}
-        <div className="bg-white rounded-2xl shadow-sm border p-6">
-          <h2 className="text-xl font-bold mb-6">Top Referrers</h2>
-          {stats.topReferrers.length > 0 ? (
-            <div className="space-y-3">
-              {stats.topReferrers.map(([referrer, count]) => (
-                <div key={referrer} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                  <span className="text-gray-700 truncate max-w-md">{referrer}</span>
-                  <span className="font-medium">{count}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-8">No referrer data</p>
-          )}
+          <section className="glass-panel-strong rounded-[1.5rem] p-6">
+            <h2 className="text-lg font-semibold text-stone-950">Top referrers</h2>
+            {stats.topReferrers.length > 0 ? (
+              <div className="mt-4 space-y-2">
+                {stats.topReferrers.map(([referrer, count]) => (
+                  <div key={referrer} className="flex items-center justify-between rounded-xl border border-black/8 bg-white/70 px-3 py-2">
+                    <span className="max-w-[70%] truncate text-sm text-stone-700">{referrer}</span>
+                    <span className="text-sm font-medium text-stone-900">{count}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="py-8 text-center text-sm soft-text">No referrer data</p>
+            )}
+          </section>
         </div>
       </main>
     </div>
