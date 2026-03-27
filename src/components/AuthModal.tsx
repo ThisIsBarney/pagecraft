@@ -19,8 +19,16 @@ interface AuthSuccessResponse {
   user: AuthUser;
 }
 
+interface AuthVerificationResponse {
+  success: boolean;
+  requiresVerification?: boolean;
+  message?: string;
+  devVerificationUrl?: string;
+}
+
 interface AuthErrorResponse {
   error?: string;
+  errorCode?: string;
 }
 
 function isAuthUser(value: unknown): value is AuthUser {
@@ -29,7 +37,6 @@ function isAuthUser(value: unknown): value is AuthUser {
   }
 
   const user = value as Record<string, unknown>;
-
   return (
     typeof user.id === "string" &&
     typeof user.email === "string" &&
@@ -41,18 +48,27 @@ function isAuthSuccessResponse(value: unknown): value is AuthSuccessResponse {
   if (!value || typeof value !== "object") {
     return false;
   }
-
   const response = value as Record<string, unknown>;
   return isAuthUser(response.user);
 }
 
-function getErrorMessage(value: unknown, fallback: string): string {
+function isVerificationResponse(value: unknown): value is AuthVerificationResponse {
   if (!value || typeof value !== "object") {
-    return fallback;
+    return false;
   }
+  const response = value as Record<string, unknown>;
+  return response.requiresVerification === true;
+}
 
+function getError(value: unknown, fallback: string) {
+  if (!value || typeof value !== "object") {
+    return { message: fallback, errorCode: "" };
+  }
   const response = value as AuthErrorResponse;
-  return typeof response.error === "string" ? response.error : fallback;
+  return {
+    message: typeof response.error === "string" ? response.error : fallback,
+    errorCode: typeof response.errorCode === "string" ? response.errorCode : "",
+  };
 }
 
 export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
@@ -63,13 +79,61 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [devVerificationUrl, setDevVerificationUrl] = useState("");
   const router = useRouter();
 
   if (!isOpen) return null;
 
+  const resetAuthNotice = () => {
+    setPendingVerification(false);
+    setVerificationMessage("");
+    setDevVerificationUrl("");
+  };
+
+  const handleResendVerification = async () => {
+    if (!email.trim()) {
+      setError("Enter your email first.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "resend_verification",
+          email,
+        }),
+      });
+
+      const data: unknown = await response.json();
+      if (!response.ok) {
+        const parsed = getError(data, "Unable to resend verification email.");
+        throw new Error(parsed.message);
+      }
+
+      if (isVerificationResponse(data)) {
+        setPendingVerification(true);
+        setVerificationMessage(
+          data.message || "Verification email sent. Please check your inbox."
+        );
+        setDevVerificationUrl(data.devVerificationUrl || "");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to resend verification email.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    resetAuthNotice();
 
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
@@ -82,7 +146,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     }
 
     setLoading(true);
-
     try {
       const response = await fetch("/api/auth", {
         method: "POST",
@@ -98,7 +161,22 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       const data: unknown = await response.json();
 
       if (!response.ok) {
-        throw new Error(getErrorMessage(data, "Authentication failed"));
+        const parsed = getError(data, "Authentication failed");
+        if (parsed.errorCode === "email_not_verified") {
+          setPendingVerification(true);
+          setVerificationMessage(parsed.message);
+          return;
+        }
+        throw new Error(parsed.message);
+      }
+
+      if (isVerificationResponse(data)) {
+        setPendingVerification(true);
+        setVerificationMessage(
+          data.message || "Registration successful. Please verify your email."
+        );
+        setDevVerificationUrl(data.devVerificationUrl || "");
+        return;
       }
 
       if (!isAuthSuccessResponse(data)) {
@@ -126,7 +204,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             <p className="mt-1 text-sm text-stone-600">
               {mode === "login"
                 ? "Use your email and password to continue."
-                : "Create an account with a secure password."}
+                : "Create an account and verify your email."}
             </p>
           </div>
           <button
@@ -141,6 +219,22 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         {error && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {error}
+          </div>
+        )}
+
+        {pendingVerification && (
+          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+            <p>{verificationMessage || "Please verify your email."}</p>
+            {devVerificationUrl && (
+              <a
+                href={devVerificationUrl}
+                className="mt-2 block break-all text-xs text-emerald-700 underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Dev verification link
+              </a>
+            )}
           </div>
         )}
 
@@ -211,6 +305,17 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                 ? "Sign in"
                 : "Create account"}
           </button>
+
+          {pendingVerification && (
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={loading}
+              className="w-full rounded-full border border-black/12 bg-white py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Resend verification email
+            </button>
+          )}
         </form>
 
         <div className="mt-5 border-t border-black/8 pt-5 text-sm">
@@ -219,6 +324,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             onClick={() => {
               setMode(mode === "login" ? "register" : "login");
               setError("");
+              resetAuthNotice();
             }}
             className="font-medium text-stone-700 underline-offset-4 hover:text-stone-950 hover:underline"
           >

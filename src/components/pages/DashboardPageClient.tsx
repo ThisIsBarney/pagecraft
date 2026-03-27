@@ -47,6 +47,8 @@ export default function DashboardPageClient() {
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [authNotice, setAuthNotice] = useState("");
+  const [authDevVerificationUrl, setAuthDevVerificationUrl] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -145,6 +147,8 @@ export default function DashboardPageClient() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
+    setAuthNotice("");
+    setAuthDevVerificationUrl("");
     const form = e.target as HTMLFormElement;
     const email = (form.elements.namedItem("email") as HTMLInputElement).value;
     const name = (form.elements.namedItem("name") as HTMLInputElement).value;
@@ -178,12 +182,56 @@ export default function DashboardPageClient() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data?.errorCode === "email_not_verified") {
+          setAuthNotice(data?.error || "Please verify your email before signing in.");
+          return;
+        }
         setAuthError(data?.error || "Authentication failed.");
+        return;
+      }
+
+      if (data?.requiresVerification) {
+        setAuthNotice(data?.message || "Please verify your email before signing in.");
+        setAuthDevVerificationUrl(data?.devVerificationUrl || "");
         return;
       }
 
       setUser(data.user);
       window.location.reload();
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const emailInput = document.querySelector<HTMLInputElement>('input[name="email"]');
+    const email = emailInput?.value?.trim();
+    if (!email) {
+      setAuthError("Enter your email first.");
+      return;
+    }
+
+    setAuthError("");
+    setAuthNotice("");
+    setAuthSubmitting(true);
+    try {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "resend_verification",
+          email,
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setAuthError(payload?.error || "Unable to resend verification email.");
+        return;
+      }
+
+      setAuthNotice(payload?.message || "Verification email sent.");
+      setAuthDevVerificationUrl(payload?.devVerificationUrl || "");
     } finally {
       setAuthSubmitting(false);
     }
@@ -310,6 +358,21 @@ export default function DashboardPageClient() {
               {authError}
             </div>
           )}
+          {authNotice && (
+            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+              <p>{authNotice}</p>
+              {authDevVerificationUrl && (
+                <a
+                  href={authDevVerificationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 block break-all text-xs text-emerald-700 underline"
+                >
+                  Dev verification link
+                </a>
+              )}
+            </div>
+          )}
 
           <form onSubmit={handleLogin} className="mt-7 space-y-4">
             <div>
@@ -370,6 +433,16 @@ export default function DashboardPageClient() {
                   ? "Sign in"
                   : "Create account"}
             </button>
+            {authNotice && (
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={authSubmitting}
+                className="w-full rounded-full border border-black/12 bg-white py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Resend verification email
+              </button>
+            )}
           </form>
 
           <div className="mt-5 border-t border-black/8 pt-5">

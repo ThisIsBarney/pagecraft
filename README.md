@@ -73,7 +73,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 
 # App URL
 NEXT_PUBLIC_URL=http://localhost:3000
+
+# Email Verification (optional, powered by Resend)
+RESEND_API_KEY=re_...
+EMAIL_FROM=PageCraft <no-reply@yourdomain.com>
 ```
+
+未配置 `RESEND_API_KEY` 时，系统仍可运行，但注册验证邮件不会真正发出；开发环境会返回一个可直接打开的验证链接。
 
 ### 安装依赖
 
