@@ -8,58 +8,45 @@ interface DesignerTemplateProps {
 
 export function DesignerTemplate({ content, author }: DesignerTemplateProps) {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <span className="text-xs sm:text-sm font-medium tracking-wider uppercase text-white/60">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1f2937_0%,#0b1020_45%,#06080f_100%)] text-white">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#06080f]/70 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
+          <span className="text-xs font-medium uppercase tracking-[0.18em] text-white/60">
             {author || "Portfolio"}
           </span>
-          <a 
-            href="/" 
-            className="text-[11px] sm:text-xs text-white/40 hover:text-white/80 transition-colors tracking-wider uppercase"
+          <a
+            href="/"
+            className="text-[11px] uppercase tracking-[0.16em] text-white/45 transition hover:text-white/80"
           >
             PageCraft
           </a>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="inline-block mb-6">
-            <span className="px-3 sm:px-4 py-2 rounded-full bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 border border-violet-500/30 text-violet-300 text-xs sm:text-sm font-medium">
-              {content.title}
-            </span>
-          </div>
-          <h1 className="text-4xl sm:text-6xl md:text-8xl font-bold leading-tight mb-6 sm:mb-8 bg-gradient-to-r from-white via-violet-200 to-fuchsia-200 bg-clip-text text-transparent">
-            Creative
-            <br />
-            Designer
+      <main className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14">
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-7 shadow-[0_30px_90px_rgba(0,0,0,0.35)] backdrop-blur sm:p-10">
+          <div className="text-xs uppercase tracking-[0.16em] text-white/50">Design document</div>
+          <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-[-0.05em] text-white sm:text-6xl">
+            {content.title}
           </h1>
-          <p className="text-base sm:text-xl text-white/60 max-w-2xl leading-relaxed">
-            Crafting digital experiences that blend aesthetics with functionality.
+          <p className="mt-4 max-w-2xl text-base leading-8 text-white/65 sm:text-lg">
+            High-contrast portfolio style focused on rhythm, whitespace, and presentation clarity.
           </p>
-        </div>
-      </section>
+        </section>
 
-      {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 pb-20 sm:pb-32">
-        <article className="prose prose-invert prose-lg max-w-none">
-          {content.blocks && <BlocksRenderer blocks={content.blocks} />}
-        </article>
+        <section className="mt-8 rounded-[2rem] border border-white/10 bg-[#0f172a]/65 px-6 py-7 backdrop-blur sm:px-10 sm:py-10">
+          <article className="max-w-none">
+            {content.blocks && <BlocksRenderer blocks={content.blocks} tone="dark" />}
+          </article>
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-8 sm:py-12">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row gap-4 sm:gap-0 items-start sm:items-center justify-between">
-          <span className="text-xs sm:text-sm text-white/40">
-            © {new Date().getFullYear()} {author || "Designer"}
-          </span>
-          <div className="flex flex-wrap gap-4 sm:gap-6">
-            <a href="#" className="text-white/40 hover:text-white/80 transition-colors text-xs sm:text-sm">Twitter</a>
-            <a href="#" className="text-white/40 hover:text-white/80 transition-colors text-xs sm:text-sm">Dribbble</a>
-            <a href="#" className="text-white/40 hover:text-white/80 transition-colors text-xs sm:text-sm">Email</a>
+      <footer className="border-t border-white/10 bg-[#06080f]/75 py-8">
+        <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:text-sm">
+          <span>© {new Date().getFullYear()} {author || "Designer"}</span>
+          <div className="flex items-center gap-4">
+            <span>Portfolio mode</span>
+            <span>Built with PageCraft</span>
           </div>
         </div>
       </footer>

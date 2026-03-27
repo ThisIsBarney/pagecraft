@@ -8,8 +8,7 @@ interface DeveloperTemplateProps {
 
 export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
   return (
-    <div className="min-h-screen bg-[#1e1e1e] text-[#d4d4d4] font-mono">
-      {/* Header */}
+    <div className="min-h-screen bg-[#0f1118] text-[#d4d4d4] font-mono">
       <header className="bg-[#252526] border-b border-[#3e3e42]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-2">
           <div className="flex gap-1.5">
@@ -23,9 +22,7 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
         </div>
       </header>
 
-      {/* Sidebar + Main */}
       <div className="max-w-4xl mx-auto flex flex-col md:flex-row">
-        {/* Sidebar */}
         <aside className="hidden md:block w-64 border-r border-[#3e3e42] min-h-[calc(100vh-49px)] p-4">
           <div className="text-xs text-[#858585] uppercase tracking-wider mb-3">Explorer</div>
           <div className="space-y-1">
@@ -52,9 +49,8 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
           </div>
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 p-4 sm:p-8">
-          <div className="mb-8">
+          <section className="mb-6 rounded-2xl border border-[#2f3443] bg-[#111827] px-5 py-6">
             <div className="flex items-center gap-2 text-[11px] sm:text-xs text-[#858585] mb-4 overflow-x-auto">
               <span>src</span>
               <span>/</span>
@@ -62,13 +58,18 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
               <span>/</span>
               <span className="text-[#d4d4d4]">page.md</span>
             </div>
-          </div>
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-[-0.03em] text-white break-words">
+              {content.title}
+            </h1>
+            <p className="mt-3 text-sm text-[#9ca3af] leading-7">
+              Technical presentation mode with stronger hierarchy for docs and changelogs.
+            </p>
+          </section>
 
-          <article className="prose prose-invert prose-code:before:content-none prose-code:after:content-none max-w-none">
-            {content.blocks && <BlocksRenderer blocks={content.blocks} />}
+          <article className="max-w-none rounded-2xl border border-[#2f3443] bg-[#0b1220] p-5 sm:p-7">
+            {content.blocks && <BlocksRenderer blocks={content.blocks} tone="dark" />}
           </article>
 
-          {/* Terminal-style footer */}
           <div className="mt-12 sm:mt-16 p-4 bg-[#252526] rounded-lg border border-[#3e3e42]">
             <div className="flex items-center gap-2 text-xs text-[#858585] mb-2">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#27ca40]" />
@@ -84,7 +85,6 @@ export function DeveloperTemplate({ content, author }: DeveloperTemplateProps) {
         </main>
       </div>
 
-      {/* Status Bar */}
       <footer className="sticky bottom-0 left-0 right-0 bg-[#007acc] text-white text-[11px] sm:text-xs py-1 px-3 sm:px-4">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-1 sm:gap-0 items-start sm:items-center justify-between">
           <div className="flex items-center gap-4">
