@@ -40,7 +40,7 @@ export default function ManageDomainsPage() {
             return;
           }
 
-          const domainsRes = await fetch(`/api/user-domains?email=${encodeURIComponent(data.user.email)}`);
+          const domainsRes = await fetch("/api/user-domains");
           if (domainsRes.ok) {
             const domainsData = await domainsRes.json();
             setDomains(domainsData.domains || []);

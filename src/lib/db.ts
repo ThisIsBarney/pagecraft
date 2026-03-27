@@ -262,6 +262,33 @@ export const domainsDb = {
     return data ? toDomainConfig(data as DomainRow) : null;
   },
 
+  async getByUserEmail(email: string): Promise<Array<{ domain: string; config: DomainConfig }>> {
+    if (!isSupabaseAdminConfigured) {
+      return Object.entries(domainStore)
+        .filter(([, config]) => config.userEmail === email)
+        .map(([domain, config]) => ({ domain, config }));
+    }
+
+    const db = assertSupabaseAdmin();
+    const { data, error } = await db
+      .from("domains")
+      .select("*")
+      .eq("user_email", email)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to load user domains: ${error.message}`);
+    }
+
+    return (data || []).map((row) => {
+      const domainRow = row as DomainRow;
+      return {
+        domain: domainRow.domain,
+        config: toDomainConfig(domainRow),
+      };
+    });
+  },
+
   async set(domain: string, config: DomainConfig): Promise<void> {
     if (!isSupabaseAdminConfigured) {
       domainStore[domain] = config;

@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { domainsDb } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 // 获取域名配置
 export async function GET(request: Request) {
@@ -20,8 +21,9 @@ export async function GET(request: Request) {
 }
 
 // 注册域名（支付后调用）
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const currentUser = await getCurrentUser(request);
     const body = await request.json();
     const { domain, pageId, template = "minimal", subscriptionId, userEmail } = body;
 
@@ -47,7 +49,9 @@ export async function POST(request: Request) {
     await domainsDb.set(normalizedDomain, {
       pageId,
       template,
-      userEmail: typeof userEmail === "string" ? userEmail : undefined,
+      userEmail:
+        currentUser?.email ||
+        (typeof userEmail === "string" && userEmail.trim() ? userEmail.trim().toLowerCase() : undefined),
       verified: true, // 支付后自动验证
       subscriptionId,
       createdAt: now,

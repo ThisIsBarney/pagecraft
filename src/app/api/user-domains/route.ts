@@ -1,28 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 import { domainsDb } from "@/lib/db";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const email = searchParams.get("email");
-
-    if (!email) {
-      return NextResponse.json({ error: "Email required" }, { status: 400 });
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // 获取所有域名
-    const allDomains = await domainsDb.getAll();
-    
-    // 过滤出用户的域名
-    const userDomains = Object.entries(allDomains)
-      .filter(([, config]) => config.userEmail === email)
-      .map(([domain, config]) => ({
-        domain,
-        pageId: config.pageId,
-        template: config.template,
-        url: `https://${domain}`,
-        verified: Boolean(config.verified),
-      }));
+    const userDomains = (await domainsDb.getByUserEmail(user.email)).map(({ domain, config }) => ({
+      domain,
+      pageId: config.pageId,
+      template: config.template,
+      url: `https://${domain}`,
+      verified: Boolean(config.verified),
+    }));
 
     return NextResponse.json({
       domains: userDomains,

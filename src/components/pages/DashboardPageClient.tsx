@@ -129,7 +129,7 @@ export default function DashboardPageClient() {
           setUser(data.user);
 
           try {
-            const domainsRes = await fetch(`/api/user-domains?email=${encodeURIComponent(data.user.email)}`);
+            const domainsRes = await fetch("/api/user-domains");
             if (domainsRes.ok) {
               const domainsData = await domainsRes.json();
               setSites(domainsData.domains || []);
