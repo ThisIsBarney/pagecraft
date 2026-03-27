@@ -2,6 +2,14 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Auth + Domain Access Branches", () => {
   test("dashboard shows sign-in form for unauthenticated users", async ({ page }) => {
+    await page.route("**/api/auth", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Not authenticated" }),
+      });
+    });
+
     await page.goto("/dashboard");
 
     await expect(page.getByRole("heading", { name: "Sign in to PageCraft" })).toBeVisible();
@@ -47,13 +55,82 @@ test.describe("Auth + Domain Access Branches", () => {
 
     await expect(page.getByText(email)).toBeVisible();
     await expect(page.getByText("Free").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Upgrade for domains" })).toHaveAttribute(
       "href",
       "/domains"
     );
   });
 
+  test("dashboard logout returns user to sign-in state", async ({ page }) => {
+    let authenticated = true;
+
+    await page.route("**/api/auth", async (route) => {
+      if (route.request().method() === "DELETE") {
+        authenticated = false;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ success: true }),
+        });
+        return;
+      }
+
+      if (!authenticated) {
+        await route.fulfill({
+          status: 401,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Not authenticated" }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            id: "1f243590-7dc0-4f20-9e76-e7f85fb99d49",
+            email: "logout@example.com",
+            name: "Logout User",
+            subscriptionStatus: "free",
+          },
+        }),
+      });
+    });
+
+    await page.route("**/api/user-domains**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ domains: [] }),
+      });
+    });
+
+    await page.route("**/api/user-pages**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ pages: [] }),
+      });
+    });
+
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "Logout" }).click();
+    await page.waitForURL("**/dashboard");
+
+    await expect(page.getByRole("heading", { name: "Sign in to PageCraft" })).toBeVisible();
+  });
+
   test("manage-domains redirects unauthenticated users to dashboard", async ({ page }) => {
+    await page.route("**/api/auth", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Not authenticated" }),
+      });
+    });
+
     await page.goto("/manage-domains");
     await page.waitForURL("**/dashboard");
 

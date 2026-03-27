@@ -62,7 +62,7 @@ export async function POST(request: Request) {
         console.log("User upgraded to Pro:", customerEmail);
       } else {
         // 如果用户不存在，创建新用户
-        const id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const id = crypto.randomUUID();
         await usersDb.set(id, {
           id,
           email: customerEmail,

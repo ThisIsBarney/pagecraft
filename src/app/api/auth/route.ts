@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { usersDb } from "@/lib/db";
-import { sessions } from "@/lib/auth";
+import { sessionsDb, usersDb } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import {
   createEmailVerificationToken,
@@ -9,6 +8,10 @@ import {
 import { sendVerificationEmail } from "@/lib/email";
 
 type AuthMode = "login" | "register" | "resend_verification";
+
+function getSessionIdFromCookie(request: Request) {
+  return request.headers.get("cookie")?.match(/session=([^;]+)/)?.[1];
+}
 
 function normalizeMode(value: unknown): AuthMode {
   if (value === "register" || value === "resend_verification") {
@@ -117,7 +120,7 @@ export async function POST(request: Request) {
       }
 
       if (!user) {
-        const id = `user_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+        const id = crypto.randomUUID();
         user = {
           id,
           email: normalizedEmail,
@@ -176,8 +179,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const sessionId = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-    sessions[sessionId] = user.id;
+    const sessionId = crypto.randomUUID();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7).toISOString();
+    await sessionsDb.set(sessionId, {
+      id: sessionId,
+      userId: user.id,
+      createdAt: now.toISOString(),
+      expiresAt,
+    });
 
     const response = NextResponse.json({
       success: true,
@@ -204,14 +214,20 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const sessionId = request.headers.get("cookie")?.match(/session=([^;]+)/)?.[1];
-
-  if (!sessionId || !sessions[sessionId]) {
+  const sessionId = getSessionIdFromCookie(request);
+  if (!sessionId) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const userId = sessions[sessionId];
-  const user = await usersDb.get(userId);
+  const session = await sessionsDb.get(sessionId);
+  if (!session || Date.parse(session.expiresAt) <= Date.now()) {
+    if (session) {
+      await sessionsDb.delete(sessionId);
+    }
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const user = await usersDb.get(session.userId);
 
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -228,10 +244,10 @@ export async function GET(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const sessionId = request.headers.get("cookie")?.match(/session=([^;]+)/)?.[1];
+  const sessionId = getSessionIdFromCookie(request);
 
   if (sessionId) {
-    delete sessions[sessionId];
+    await sessionsDb.delete(sessionId);
   }
 
   const response = NextResponse.json({ success: true });
@@ -242,13 +258,20 @@ export async function DELETE(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const sessionId = request.headers.get("cookie")?.match(/session=([^;]+)/)?.[1];
-    if (!sessionId || !sessions[sessionId]) {
+    const sessionId = getSessionIdFromCookie(request);
+    if (!sessionId) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const userId = sessions[sessionId];
-    const user = await usersDb.get(userId);
+    const session = await sessionsDb.get(sessionId);
+    if (!session || Date.parse(session.expiresAt) <= Date.now()) {
+      if (session) {
+        await sessionsDb.delete(sessionId);
+      }
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const user = await usersDb.get(session.userId);
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }

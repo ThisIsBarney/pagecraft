@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new page
-    const pageId = `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const pageId = crypto.randomUUID();
     const baseSettings = {
       navOrder: existingPages.length,
       hideFromNavigation: false,

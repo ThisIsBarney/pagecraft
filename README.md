@@ -7,7 +7,7 @@ Notion → 精美个人主页生成器
 - 🔗 **Notion 集成** - 将 Notion 页面转换为精美网站
 - 🎨 **多模板支持** - 多种设计风格可选
 - ✨ **统一现代简约界面** - 首页、创建页、升级页、仪表盘共用一致的高级浅色视觉系统
-- 🔐 **用户系统** - 基于 Supabase 的用户认证和数据存储
+- 🔐 **用户系统** - 自定义邮箱密码认证，用户数据持久化到 Supabase PostgreSQL
 - 💰 **订阅管理** - 免费版/Pro版/团队版订阅
 - 📊 **分析统计** - 页面访问量跟踪
 - 🚀 **快速部署** - 一键部署到 Vercel
@@ -25,9 +25,9 @@ Notion → 精美个人主页生成器
 ## 技术栈
 
 - **前端**: Next.js 14, React, TypeScript, Tailwind CSS
-- **后端**: Next.js API Routes, Supabase
+- **后端**: Next.js API Routes, Supabase PostgreSQL
 - **数据库**: Supabase PostgreSQL
-- **认证**: Supabase Auth
+- **认证**: 自定义 Session Auth + 邮箱验证
 - **支付**: Stripe
 - **部署**: Vercel
 
@@ -70,6 +70,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 
 # App URL
 NEXT_PUBLIC_URL=http://localhost:3000
@@ -100,8 +101,12 @@ npm run dev
 ### 数据库设置
 
 1. 在 Supabase 控制台创建新项目
-2. 运行 SQL 迁移文件：`supabase/migrations/20240313_create_tables.sql`
+2. 运行 SQL 迁移文件：
+   - `supabase/migrations/20240313_create_tables.sql`
+   - `supabase/migrations/20260327_auth_domains_sessions.sql`
 3. 配置环境变量
+
+未配置 `SUPABASE_SERVICE_ROLE_KEY` 时，应用会退回到内存存储，仅适合本地开发和临时调试，不具备持久化能力。
 
 ## 数据库架构
 
