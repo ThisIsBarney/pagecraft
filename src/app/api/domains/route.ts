@@ -24,8 +24,12 @@ export async function GET(request: Request) {
 export async function POST(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser(request);
+    if (!currentUser) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
     const body = await request.json();
-    const { domain, pageId, template = "minimal", subscriptionId, userEmail } = body;
+    const { domain, pageId, template = "minimal", subscriptionId } = body;
 
     if (!domain || !pageId) {
       return NextResponse.json(
@@ -45,16 +49,19 @@ export async function POST(request: NextRequest) {
 
     const normalizedDomain = domain.toLowerCase();
     const now = new Date().toISOString();
+    const existing = await domainsDb.get(normalizedDomain);
+
+    if (existing && existing.userEmail && existing.userEmail !== currentUser.email) {
+      return NextResponse.json({ error: "Domain is already connected to another account." }, { status: 409 });
+    }
 
     await domainsDb.set(normalizedDomain, {
       pageId,
       template,
-      userEmail:
-        currentUser?.email ||
-        (typeof userEmail === "string" && userEmail.trim() ? userEmail.trim().toLowerCase() : undefined),
+      userEmail: currentUser.email,
       verified: true, // 支付后自动验证
       subscriptionId,
-      createdAt: now,
+      createdAt: existing?.createdAt || now,
       updatedAt: now,
     });
 
@@ -73,6 +80,36 @@ export async function POST(request: NextRequest) {
       { error: "Invalid request" },
       { status: 400 }
     );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const domain = typeof body.domain === "string" ? body.domain.trim().toLowerCase() : "";
+    if (!domain) {
+      return NextResponse.json({ error: "Domain required" }, { status: 400 });
+    }
+
+    const existing = await domainsDb.get(domain);
+    if (!existing) {
+      return NextResponse.json({ error: "Domain not found" }, { status: 404 });
+    }
+
+    if (existing.userEmail !== currentUser.email) {
+      return NextResponse.json({ error: "You do not have access to this domain." }, { status: 403 });
+    }
+
+    await domainsDb.delete(domain);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Delete domain error:", error);
+    return NextResponse.json({ error: "Failed to delete domain" }, { status: 500 });
   }
 }
 

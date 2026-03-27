@@ -22,11 +22,27 @@ export default function ManageDomainsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [domains, setDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [newDomain, setNewDomain] = useState("");
   const [newPageId, setNewPageId] = useState("");
   const [newTemplate, setNewTemplate] = useState("minimal");
   const [adding, setAdding] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formMessage, setFormMessage] = useState("");
+  const [deletingDomain, setDeletingDomain] = useState<string | null>(null);
   const router = useRouter();
+
+  const loadDomains = async () => {
+    setLoadError("");
+    const domainsRes = await fetch("/api/user-domains");
+    const domainsData = await domainsRes.json().catch(() => ({}));
+
+    if (!domainsRes.ok) {
+      throw new Error(domainsData?.error || "Unable to load your domains.");
+    }
+
+    setDomains(domainsData.domains || []);
+  };
 
   useEffect(() => {
     fetch("/api/auth")
@@ -40,10 +56,10 @@ export default function ManageDomainsPage() {
             return;
           }
 
-          const domainsRes = await fetch("/api/user-domains");
-          if (domainsRes.ok) {
-            const domainsData = await domainsRes.json();
-            setDomains(domainsData.domains || []);
+          try {
+            await loadDomains();
+          } catch (error) {
+            setLoadError(error instanceof Error ? error.message : "Unable to load your domains.");
           }
         } else {
           router.push("/dashboard");
@@ -58,10 +74,12 @@ export default function ManageDomainsPage() {
 
   const handleAddDomain = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
+    setFormMessage("");
     setAdding(true);
 
     if (!user?.email) {
-      alert("Unable to resolve your account email. Please sign in again.");
+      setFormError("Unable to resolve your account email. Please sign in again.");
       setAdding(false);
       return;
     }
@@ -74,31 +92,50 @@ export default function ManageDomainsPage() {
           domain: newDomain,
           pageId: newPageId,
           template: newTemplate,
-          userEmail: user.email,
         }),
       });
 
+      const payload = await res.json().catch(() => ({}));
+
       if (res.ok) {
-        setDomains([
-          ...domains,
-          {
-            domain: newDomain,
-            pageId: newPageId,
-            template: newTemplate,
-            url: `https://${newDomain}`,
-            verified: true,
-          },
-        ]);
+        await loadDomains();
         setNewDomain("");
         setNewPageId("");
-        alert("Domain added. Please configure DNS.");
+        setFormMessage(payload?.message || "Domain added. Configure DNS to finish setup.");
       } else {
-        alert("Failed to add domain");
+        setFormError(payload?.error || "Failed to add domain.");
       }
-    } catch {
-      alert("Network error");
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Network error.");
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleDeleteDomain = async (domain: string) => {
+    setFormError("");
+    setFormMessage("");
+    setDeletingDomain(domain);
+
+    try {
+      const response = await fetch("/api/domains", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setFormError(payload?.error || "Failed to remove domain.");
+        return;
+      }
+
+      setDomains((current) => current.filter((item) => item.domain !== domain));
+      setFormMessage(`Removed ${domain}.`);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Network error.");
+    } finally {
+      setDeletingDomain((current) => (current === domain ? null : current));
     }
   };
 
@@ -136,6 +173,17 @@ export default function ManageDomainsPage() {
         <div className="grid gap-6">
           <section className="glass-panel-strong rounded-[1.75rem] p-6">
             <h2 className="text-xl font-semibold tracking-[-0.03em] text-stone-950">Add new domain</h2>
+            <p className="mt-2 text-sm soft-text">Connect a custom domain to one of your published Notion pages.</p>
+            {formError && (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {formError}
+              </div>
+            )}
+            {formMessage && (
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                {formMessage}
+              </div>
+            )}
             <form onSubmit={handleAddDomain} className="mt-4 space-y-4">
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
@@ -186,7 +234,7 @@ export default function ManageDomainsPage() {
 
           <section className="glass-panel-strong rounded-[1.75rem] p-6">
             <h3 className="text-base font-semibold text-stone-950">DNS configuration</h3>
-            <p className="mt-2 text-sm soft-text">Configure the following record for each connected domain:</p>
+            <p className="mt-2 text-sm soft-text">Configure the following record at your DNS provider. Changes can take a few minutes to propagate.</p>
             <div className="mt-3 rounded-xl border border-black/8 bg-white/80 p-4 font-mono text-sm text-stone-700">
               <div>Type: CNAME</div>
               <div>Name: @</div>
@@ -196,7 +244,22 @@ export default function ManageDomainsPage() {
 
           <section className="glass-panel-strong rounded-[1.75rem] p-6">
             <h2 className="text-xl font-semibold tracking-[-0.03em] text-stone-950">Your domains</h2>
-            {domains.length > 0 ? (
+            {loadError ? (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p className="font-medium">{loadError}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    loadDomains().catch((error) =>
+                      setLoadError(error instanceof Error ? error.message : "Unable to load your domains.")
+                    );
+                  }}
+                  className="mt-3 rounded-full border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : domains.length > 0 ? (
               <div className="mt-4 space-y-3">
                 {domains.map((domain) => (
                   <div key={domain.domain} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/8 bg-white/85 p-4">
@@ -217,14 +280,24 @@ export default function ManageDomainsPage() {
                         Template: {domain.template} | Page: {domain.pageId.slice(0, 8)}...
                       </div>
                     </div>
-                    <a
-                      href={domain.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-full bg-stone-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-800"
-                    >
-                      Open site
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={domain.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-full bg-stone-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-800"
+                      >
+                        Open site
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDomain(domain.domain)}
+                        disabled={deletingDomain === domain.domain}
+                        className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {deletingDomain === domain.domain ? "Removing..." : "Remove"}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
