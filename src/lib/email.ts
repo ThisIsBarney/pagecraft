@@ -4,6 +4,12 @@ interface SendVerificationEmailOptions {
   verificationUrl: string;
 }
 
+interface SendPasswordResetEmailOptions {
+  to: string;
+  name?: string;
+  resetUrl: string;
+}
+
 interface SendVerificationEmailResult {
   sent: boolean;
   reason?: string;
@@ -69,6 +75,69 @@ export async function sendVerificationEmail({
     return { sent: true };
   } catch (error) {
     console.error("Failed to send verification email:", error);
+    return { sent: false, reason: "email_provider_error" };
+  }
+}
+
+function buildPasswordResetEmailHtml(name: string | undefined, resetUrl: string) {
+  const greeting = name?.trim() ? `Hi ${name.trim()},` : "Hi,";
+
+  return `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #111827; line-height: 1.6;">
+      <h2 style="margin: 0 0 12px;">Reset your PageCraft password</h2>
+      <p style="margin: 0 0 12px;">${greeting}</p>
+      <p style="margin: 0 0 16px;">Use the link below to set a new password. The link expires in 1 hour.</p>
+      <p style="margin: 0 0 20px;">
+        <a
+          href="${resetUrl}"
+          style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; padding: 10px 16px; border-radius: 999px; font-weight: 600;"
+        >
+          Reset Password
+        </a>
+      </p>
+      <p style="margin: 0 0 6px; font-size: 14px; color: #4b5563;">If the button does not work, copy and open this URL:</p>
+      <p style="margin: 0; font-size: 13px; word-break: break-all; color: #2563eb;">${resetUrl}</p>
+    </div>
+  `;
+}
+
+export async function sendPasswordResetEmail({
+  to,
+  name,
+  resetUrl,
+}: SendPasswordResetEmailOptions): Promise<SendVerificationEmailResult> {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM || "PageCraft <no-reply@pagecraft.dev>";
+
+  if (!resendApiKey) {
+    console.warn("RESEND_API_KEY is not configured. Password reset email is not sent.");
+    return { sent: false, reason: "email_provider_not_configured" };
+  }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [to],
+        subject: "Reset your PageCraft password",
+        html: buildPasswordResetEmailHtml(name, resetUrl),
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      console.error("Failed to send password reset email:", response.status, body);
+      return { sent: false, reason: "email_provider_error" };
+    }
+
+    return { sent: true };
+  } catch (error) {
+    console.error("Failed to send password reset email:", error);
     return { sent: false, reason: "email_provider_error" };
   }
 }

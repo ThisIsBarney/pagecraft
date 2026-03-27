@@ -20,6 +20,8 @@ const userStore: Record<string, {
   emailVerified?: boolean;
   emailVerificationTokenHash?: string;
   emailVerificationExpiresAt?: string;
+  passwordResetTokenHash?: string;
+  passwordResetExpiresAt?: string;
   stripeCustomerId?: string;
   subscriptionStatus: 'free' | 'active' | 'cancelled' | 'past_due';
   createdAt: string;
@@ -60,6 +62,8 @@ export interface User {
   emailVerified?: boolean;
   emailVerificationTokenHash?: string;
   emailVerificationExpiresAt?: string;
+  passwordResetTokenHash?: string;
+  passwordResetExpiresAt?: string;
   stripeCustomerId?: string;
   subscriptionStatus: 'free' | 'active' | 'cancelled' | 'past_due';
   createdAt: string;

@@ -72,7 +72,7 @@ function getError(value: unknown, fallback: string) {
 }
 
 export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -82,6 +82,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const [pendingVerification, setPendingVerification] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
   const [devVerificationUrl, setDevVerificationUrl] = useState("");
+  const [devResetUrl, setDevResetUrl] = useState("");
   const router = useRouter();
 
   if (!isOpen) return null;
@@ -90,6 +91,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setPendingVerification(false);
     setVerificationMessage("");
     setDevVerificationUrl("");
+    setDevResetUrl("");
   };
 
   const handleResendVerification = async () => {
@@ -134,6 +136,36 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     e.preventDefault();
     setError("");
     resetAuthNotice();
+
+    if (mode === "forgot") {
+      if (!email.trim()) {
+        setError("Enter your email first.");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload?.error || "Unable to process request.");
+        }
+
+        setVerificationMessage(payload?.message || "If this email exists, a reset link has been sent.");
+        setPendingVerification(true);
+        setDevResetUrl(payload?.devResetUrl || "");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unable to process request.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
@@ -199,12 +231,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         <div className="mb-6 flex items-start justify-between gap-3">
           <div>
             <h2 className="text-2xl font-semibold tracking-[-0.03em] text-stone-950">
-              {mode === "login" ? "Sign in" : "Create account"}
+              {mode === "login" ? "Sign in" : mode === "register" ? "Create account" : "Reset password"}
             </h2>
             <p className="mt-1 text-sm text-stone-600">
               {mode === "login"
                 ? "Use your email and password to continue."
-                : "Create an account and verify your email."}
+                : mode === "register"
+                  ? "Create an account and verify your email."
+                  : "Enter your email to receive a reset link."}
             </p>
           </div>
           <button
@@ -233,6 +267,16 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                 rel="noopener noreferrer"
               >
                 Dev verification link
+              </a>
+            )}
+            {devResetUrl && (
+              <a
+                href={devResetUrl}
+                className="mt-2 block break-all text-xs text-emerald-700 underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Dev password reset link
               </a>
             )}
           </div>
@@ -264,18 +308,20 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             </div>
           )}
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-stone-700">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
-              minLength={8}
-              required
-              className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-stone-900 outline-none transition focus:border-stone-900"
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-stone-700">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="At least 8 characters"
+                minLength={8}
+                required
+                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-stone-900 outline-none transition focus:border-stone-900"
+              />
+            </div>
+          )}
 
           {mode === "register" && (
             <div>
@@ -300,17 +346,35 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             {loading
               ? mode === "login"
                 ? "Signing in..."
-                : "Creating account..."
+                : mode === "register"
+                  ? "Creating account..."
+                  : "Sending link..."
               : mode === "login"
                 ? "Sign in"
-                : "Create account"}
+                : mode === "register"
+                  ? "Create account"
+                  : "Send reset link"}
           </button>
+
+          {mode === "login" && (
+            <button
+              type="button"
+              onClick={() => {
+                setMode("forgot");
+                setError("");
+                resetAuthNotice();
+              }}
+              className="w-full text-sm font-medium text-stone-600 underline-offset-4 hover:text-stone-900 hover:underline"
+            >
+              Forgot password?
+            </button>
+          )}
 
           {pendingVerification && (
             <button
               type="button"
               onClick={handleResendVerification}
-              disabled={loading}
+              disabled={loading || mode === "forgot"}
               className="w-full rounded-full border border-black/12 bg-white py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Resend verification email
@@ -322,13 +386,21 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
           <button
             type="button"
             onClick={() => {
-              setMode(mode === "login" ? "register" : "login");
+              if (mode === "forgot") {
+                setMode("login");
+              } else {
+                setMode(mode === "login" ? "register" : "login");
+              }
               setError("");
               resetAuthNotice();
             }}
             className="font-medium text-stone-700 underline-offset-4 hover:text-stone-950 hover:underline"
           >
-            {mode === "login" ? "No account yet? Create one" : "Already have an account? Sign in"}
+            {mode === "login"
+              ? "No account yet? Create one"
+              : mode === "register"
+                ? "Already have an account? Sign in"
+                : "Back to sign in"}
           </button>
         </div>
       </div>

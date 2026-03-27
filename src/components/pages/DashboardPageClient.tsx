@@ -237,6 +237,38 @@ export default function DashboardPageClient() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    const emailInput = document.querySelector<HTMLInputElement>('input[name="email"]');
+    const email = emailInput?.value?.trim();
+    if (!email) {
+      setAuthError("Enter your email first.");
+      return;
+    }
+
+    setAuthError("");
+    setAuthNotice("");
+    setAuthDevVerificationUrl("");
+    setAuthSubmitting(true);
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setAuthError(payload?.error || "Unable to send reset link.");
+        return;
+      }
+
+      setAuthNotice(payload?.message || "If this email exists, a reset link has been sent.");
+      setAuthDevVerificationUrl(payload?.devResetUrl || "");
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+
   const copyPublishUrl = async (pageId: string, slug: string, template: string) => {
     const pageSlug = slug || pageId;
     const publishUrl = `${window.location.origin}/p/${pageSlug}?template=${template || "minimal"}`;
@@ -441,6 +473,16 @@ export default function DashboardPageClient() {
                 className="w-full rounded-full border border-black/12 bg-white py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Resend verification email
+              </button>
+            )}
+            {authMode === "login" && (
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={authSubmitting}
+                className="w-full text-sm font-medium text-stone-600 underline-offset-4 hover:text-stone-900 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Forgot password?
               </button>
             )}
           </form>
