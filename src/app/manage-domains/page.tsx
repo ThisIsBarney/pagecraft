@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { extractNotionPageId } from "@/lib/notion-input";
 
 interface Domain {
   domain: string;
@@ -18,6 +19,17 @@ interface User {
   subscriptionStatus: string;
 }
 
+const TEMPLATE_OPTIONS = ["minimal", "designer", "developer", "creator"];
+
+function normalizePageReference(value: string) {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) {
+    return null;
+  }
+
+  return extractNotionPageId(trimmedValue);
+}
+
 export default function ManageDomainsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [domains, setDomains] = useState<Domain[]>([]);
@@ -27,6 +39,10 @@ export default function ManageDomainsPage() {
   const [newPageId, setNewPageId] = useState("");
   const [newTemplate, setNewTemplate] = useState("minimal");
   const [adding, setAdding] = useState(false);
+  const [editingDomain, setEditingDomain] = useState<string | null>(null);
+  const [editPageId, setEditPageId] = useState("");
+  const [editTemplate, setEditTemplate] = useState("minimal");
+  const [savingEditDomain, setSavingEditDomain] = useState<string | null>(null);
   const [formError, setFormError] = useState("");
   const [formMessage, setFormMessage] = useState("");
   const [deletingDomain, setDeletingDomain] = useState<string | null>(null);
@@ -42,6 +58,60 @@ export default function ManageDomainsPage() {
     }
 
     setDomains(domainsData.domains || []);
+  };
+
+  const startEditingDomain = (domain: Domain) => {
+    setFormError("");
+    setFormMessage("");
+    setEditingDomain(domain.domain);
+    setEditPageId(domain.pageId);
+    setEditTemplate(domain.template);
+  };
+
+  const cancelEditing = () => {
+    setEditingDomain(null);
+    setEditPageId("");
+    setEditTemplate("minimal");
+    setSavingEditDomain(null);
+  };
+
+  const handleSaveDomainEdit = async (domain: string) => {
+    setFormError("");
+    setFormMessage("");
+
+    const normalizedPageId = normalizePageReference(editPageId);
+    if (!normalizedPageId) {
+      setFormError("Please provide a valid Notion page URL or 32-character page ID.");
+      return;
+    }
+
+    setSavingEditDomain(domain);
+
+    try {
+      const response = await fetch("/api/domains", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain,
+          pageId: normalizedPageId,
+          template: editTemplate,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setFormError(payload?.error || "Failed to update domain binding.");
+        return;
+      }
+
+      await loadDomains();
+      setFormMessage(payload?.message || `Updated ${domain}.`);
+      cancelEditing();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Network error.");
+    } finally {
+      setSavingEditDomain((current) => (current === domain ? null : current));
+    }
   };
 
   useEffect(() => {
@@ -84,13 +154,20 @@ export default function ManageDomainsPage() {
       return;
     }
 
+    const normalizedPageId = normalizePageReference(newPageId);
+    if (!normalizedPageId) {
+      setFormError("Please provide a valid Notion page URL or 32-character page ID.");
+      setAdding(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/domains", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain: newDomain,
-          pageId: newPageId,
+          pageId: normalizedPageId,
           template: newTemplate,
         }),
       });
@@ -101,6 +178,7 @@ export default function ManageDomainsPage() {
         await loadDomains();
         setNewDomain("");
         setNewPageId("");
+        setNewTemplate("minimal");
         setFormMessage(payload?.message || "Domain added. Configure DNS to finish setup.");
       } else {
         setFormError(payload?.error || "Failed to add domain.");
@@ -203,7 +281,7 @@ export default function ManageDomainsPage() {
                     type="text"
                     value={newPageId}
                     onChange={(e) => setNewPageId(e.target.value)}
-                    placeholder="1a2b3c4d..."
+                    placeholder="32-character page ID or Notion URL"
                     className="w-full rounded-xl border border-black/10 bg-white/90 px-4 py-3 font-mono text-sm text-stone-900 outline-none transition focus:border-stone-900"
                     required
                   />
@@ -279,8 +357,67 @@ export default function ManageDomainsPage() {
                       <div className="mt-1 text-sm soft-text">
                         Template: {domain.template} | Page: {domain.pageId.slice(0, 8)}...
                       </div>
+                      {editingDomain === domain.domain && (
+                        <div className="mt-4 grid gap-3 rounded-xl border border-black/8 bg-white p-3 md:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-xs font-medium uppercase tracking-[0.12em] text-stone-500">
+                              Bound page
+                            </label>
+                            <input
+                              type="text"
+                              value={editPageId}
+                              onChange={(event) => setEditPageId(event.target.value)}
+                              placeholder="32-character page ID or Notion URL"
+                              className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 font-mono text-xs text-stone-900 outline-none transition focus:border-stone-900"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-medium uppercase tracking-[0.12em] text-stone-500">
+                              Template
+                            </label>
+                            <select
+                              value={editTemplate}
+                              onChange={(event) => setEditTemplate(event.target.value)}
+                              className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-stone-900"
+                            >
+                              {TEMPLATE_OPTIONS.map((template) => (
+                                <option key={template} value={template}>
+                                  {template}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
+                      {editingDomain === domain.domain ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveDomainEdit(domain.domain)}
+                            disabled={savingEditDomain === domain.domain}
+                            className="rounded-full bg-stone-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {savingEditDomain === domain.domain ? "Saving..." : "Save changes"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditing}
+                            className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:text-stone-950"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => startEditingDomain(domain)}
+                          className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-stone-400 hover:text-stone-950"
+                        >
+                          Edit binding
+                        </button>
+                      )}
                       <a
                         href={domain.url}
                         target="_blank"
@@ -292,7 +429,7 @@ export default function ManageDomainsPage() {
                       <button
                         type="button"
                         onClick={() => handleDeleteDomain(domain.domain)}
-                        disabled={deletingDomain === domain.domain}
+                        disabled={deletingDomain === domain.domain || editingDomain === domain.domain}
                         className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {deletingDomain === domain.domain ? "Removing..." : "Remove"}

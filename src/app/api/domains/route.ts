@@ -113,6 +113,55 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
+export async function PATCH(request: NextRequest) {
+  try {
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const domain = typeof body.domain === "string" ? body.domain.trim().toLowerCase() : "";
+    const pageId = typeof body.pageId === "string" ? body.pageId.trim() : "";
+    const template = typeof body.template === "string" ? body.template.trim() : "minimal";
+
+    if (!domain || !pageId) {
+      return NextResponse.json({ error: "Domain and pageId required" }, { status: 400 });
+    }
+
+    if (!/^(minimal|designer|developer|creator)$/.test(template)) {
+      return NextResponse.json({ error: "Invalid template" }, { status: 400 });
+    }
+
+    const existing = await domainsDb.get(domain);
+    if (!existing) {
+      return NextResponse.json({ error: "Domain not found" }, { status: 404 });
+    }
+
+    if (existing.userEmail !== currentUser.email) {
+      return NextResponse.json({ error: "You do not have access to this domain." }, { status: 403 });
+    }
+
+    await domainsDb.set(domain, {
+      ...existing,
+      pageId,
+      template,
+      updatedAt: new Date().toISOString(),
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Domain binding updated.",
+      domain,
+      pageId,
+      template,
+    });
+  } catch (error) {
+    console.error("Update domain error:", error);
+    return NextResponse.json({ error: "Failed to update domain" }, { status: 500 });
+  }
+}
+
 // Stripe webhook 处理支付成功
 export async function PUT(request: Request) {
   // 验证 Stripe webhook

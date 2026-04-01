@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import AuthModal from "@/components/AuthModal";
 import { useAuth } from "@/hooks/useAuth";
 import { extractNotionPageId } from "@/lib/notion-input";
@@ -27,6 +26,12 @@ interface ValidationResult {
   pageId: string;
   unsupportedBlockTypes?: string[];
   pageStructure?: Array<{ id: string; title: string }>;
+}
+
+interface PublishSuccessState {
+  publishPath: string;
+  domainPath: string;
+  dashboardPath: string;
 }
 
 interface ValidationSuccessResponse {
@@ -169,7 +174,7 @@ export default function CreatePageClient() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [shouldSavePage, setShouldSavePage] = useState(false);
   const [publishNotice, setPublishNotice] = useState("");
-  const router = useRouter();
+  const [publishSuccess, setPublishSuccess] = useState<PublishSuccessState | null>(null);
   const { user, isAuthenticated } = useAuth();
   const hasLoadedDraft = useRef(false);
   const hasPageIdInput = pageId.trim() !== "";
@@ -289,6 +294,7 @@ export default function CreatePageClient() {
     }
 
     setPublishNotice("");
+    setPublishSuccess(null);
     setError("");
     setErrorCode(null);
     setValidationResult(null);
@@ -350,7 +356,17 @@ export default function CreatePageClient() {
       }
 
       window.localStorage.removeItem(CREATE_DRAFT_STORAGE_KEY);
-      router.push(`/p/${finalSlug}?template=${selectedTemplate}`);
+      const publishPath = `/p/${finalSlug}?template=${selectedTemplate}`;
+      const domainPath = user?.subscriptionStatus === "active" ? "/manage-domains" : "/domains";
+
+      setPublishSuccess({
+        publishPath,
+        domainPath,
+        dashboardPath: "/dashboard",
+      });
+      setShouldSavePage(false);
+      setSubmissionStage("idle");
+      setLoading(false);
     } catch (error) {
       console.error("Failed to save page:", error);
       setError(error instanceof Error ? error.message : "Failed to save page. Please try again.");
@@ -678,6 +694,7 @@ export default function CreatePageClient() {
                     setError("");
                     setErrorCode(null);
                     setPublishNotice("");
+                    setPublishSuccess(null);
                     setSubmissionStage("idle");
                     setValidationResult(null);
                   }}
@@ -704,6 +721,7 @@ export default function CreatePageClient() {
                         setPageId("");
                         setAuthor("");
                         setPublishNotice("");
+                        setPublishSuccess(null);
                         setValidationResult(null);
                         setSubmissionStage("idle");
                         window.localStorage.removeItem(CREATE_DRAFT_STORAGE_KEY);
@@ -768,11 +786,43 @@ export default function CreatePageClient() {
                   onChange={(e) => {
                     setAuthor(e.target.value);
                     setPublishNotice("");
+                    setPublishSuccess(null);
                   }}
                   placeholder="e.g., Marshall WU"
                   className="w-full rounded-2xl border border-black/10 bg-white/90 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-950 focus:ring-0"
                 />
               </div>
+
+              {publishSuccess && (
+                <div className="rounded-[1.25rem] border border-emerald-200 bg-emerald-50/90 p-4 text-sm text-emerald-900">
+                  <div className="font-medium">Site published successfully</div>
+                  <p className="mt-1 text-emerald-800">
+                    Next step: view your page, bind a custom domain, or continue from dashboard.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <a
+                      href={publishSuccess.publishPath}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full bg-stone-950 px-4 py-2 text-xs font-medium text-white transition hover:bg-stone-800"
+                    >
+                      View page
+                    </a>
+                    <a
+                      href={publishSuccess.domainPath}
+                      className="rounded-full border border-black/12 bg-white px-4 py-2 text-xs font-medium text-stone-800 transition hover:bg-stone-50"
+                    >
+                      Bind domain
+                    </a>
+                    <a
+                      href={publishSuccess.dashboardPath}
+                      className="rounded-full border border-black/12 bg-white px-4 py-2 text-xs font-medium text-stone-800 transition hover:bg-stone-50"
+                    >
+                      Go to dashboard
+                    </a>
+                  </div>
+                </div>
+              )}
 
               {expectedPublishUrl && (
                 <div className="rounded-[1.25rem] border border-black/8 bg-stone-50/90 p-4 text-xs text-stone-700 sm:text-sm">

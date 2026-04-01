@@ -7,7 +7,7 @@ test.describe("PageCraft E2E Tests", () => {
     await page.goto("/");
     
     // 检查标题
-    await expect(page.locator("h1")).toContainText("Turn your Notion into a");
+    await expect(page.locator("h1")).toContainText("Turn a raw Notion page into a site that feels designed.");
     
     // 检查 CTA 按钮
     await expect(page.locator("text=Create Your Site")).toBeVisible();
@@ -25,7 +25,7 @@ test.describe("PageCraft E2E Tests", () => {
     await page.goto("/examples");
     
     // 检查内容渲染
-    await expect(page.getByRole("heading", { name: "Template Gallery" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Pick the visual direction before publishing." })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Creator" })).toBeVisible();
   });
 

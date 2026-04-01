@@ -69,4 +69,20 @@ test.describe("Payment API Branches", () => {
       error: "Failed to verify payment",
     });
   });
+
+  test("domains PATCH requires authentication", async ({ request }) => {
+    const response = await request.patch("/api/domains", {
+      data: {
+        domain: "patch-auth-required.com",
+        pageId: "1234567890abcdef1234567890abcdef",
+        template: "minimal",
+      },
+    });
+
+    expect(response.status()).toBe(401);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "Not authenticated",
+    });
+  });
+
 });
